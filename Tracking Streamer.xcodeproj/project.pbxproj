@@ -654,14 +654,15 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = ATTMC2WVK2;
+				DEVELOPMENT_TEAM = SRVJVMZ2WS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Supporting files/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Tracking Streamer";
+				INFOPLIST_KEY_CFBundleDisplayName = "R1 Tracking Streamer";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app might use your cameras to sense the surrounding environments. ";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Send head and hand tracking to your R1 Ubuntu host on the local network.";
 				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "This app tracks your hand to teleoperate a robot. ";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to communicate with the robot.";
 				INFOPLIST_KEY_NSWorldSensingUsageDescription = "This app senses your surronuding world to reconstruct a simulation.";
@@ -670,7 +671,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.51;
-				PRODUCT_BUNDLE_IDENTIFIER = improbable.younghyo.DexTeleop2;
+				PRODUCT_BUNDLE_IDENTIFIER = local.r1.TrackingStreamer.srvjvmz2ws;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "xros xrsimulator";
@@ -693,14 +694,15 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = ATTMC2WVK2;
+				DEVELOPMENT_TEAM = SRVJVMZ2WS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Supporting files/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Tracking Streamer";
+				INFOPLIST_KEY_CFBundleDisplayName = "R1 Tracking Streamer";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app might use your cameras to sense the surrounding environments. ";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Send head and hand tracking to your R1 Ubuntu host on the local network.";
 				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "This app tracks your hand to teleoperate a robot. ";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to communicate with the robot.";
 				INFOPLIST_KEY_NSWorldSensingUsageDescription = "This app senses your surronuding world to reconstruct a simulation.";
@@ -709,7 +711,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.51;
-				PRODUCT_BUNDLE_IDENTIFIER = improbable.younghyo.DexTeleop2;
+				PRODUCT_BUNDLE_IDENTIFIER = local.r1.TrackingStreamer.srvjvmz2ws;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "xros xrsimulator";
@@ -729,7 +731,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Tracking Viewer/Tracking Viewer.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = ATTMC2WVK2;
+				DEVELOPMENT_TEAM = SRVJVMZ2WS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Tracking Viewer/Tracking-Viewer-Info.plist";
@@ -773,7 +775,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Tracking Viewer/Tracking Viewer.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = ATTMC2WVK2;
+				DEVELOPMENT_TEAM = SRVJVMZ2WS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Tracking Viewer/Tracking-Viewer-Info.plist";
@@ -875,7 +877,7 @@
 		};
 		C1E05F762ECD84DF0018C506 /* XCRemoteSwiftPackageReference "webrtc-xcframework" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:livekit/webrtc-xcframework.git";
+			repositoryURL = "https://github.com/livekit/webrtc-xcframework.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 137.7151.10;

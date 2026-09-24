@@ -144,6 +144,51 @@ public struct Handtracking_HandUpdate: @unchecked Sendable {
   /// Clears the value of `head`. Subsequent reads from it will return its default value.
   public mutating func clearHead() {_uniqueStorage()._head = nil}
 
+  public var trackingProtocolVersion: UInt32 {
+    get {return _storage._trackingProtocolVersion}
+    set {_uniqueStorage()._trackingProtocolVersion = newValue}
+  }
+
+  public var sampleTime: Double {
+    get {return _storage._sampleTime}
+    set {_uniqueStorage()._sampleTime = newValue}
+  }
+
+  public var headTime: Double {
+    get {return _storage._headTime}
+    set {_uniqueStorage()._headTime = newValue}
+  }
+
+  public var leftTime: Double {
+    get {return _storage._leftTime}
+    set {_uniqueStorage()._leftTime = newValue}
+  }
+
+  public var rightTime: Double {
+    get {return _storage._rightTime}
+    set {_uniqueStorage()._rightTime = newValue}
+  }
+
+  public var headValid: Bool {
+    get {return _storage._headValid}
+    set {_uniqueStorage()._headValid = newValue}
+  }
+
+  public var leftValid: Bool {
+    get {return _storage._leftValid}
+    set {_uniqueStorage()._leftValid = newValue}
+  }
+
+  public var rightValid: Bool {
+    get {return _storage._rightValid}
+    set {_uniqueStorage()._rightValid = newValue}
+  }
+
+  public var predictionSeconds: Double {
+    get {return _storage._predictionSeconds}
+    set {_uniqueStorage()._predictionSeconds = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -391,12 +436,30 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
     1: .standard(proto: "left_hand"),
     2: .standard(proto: "right_hand"),
     3: .same(proto: "Head"),
+    4: .standard(proto: "tracking_protocol_version"),
+    5: .standard(proto: "sample_time"),
+    6: .standard(proto: "head_time"),
+    7: .standard(proto: "left_time"),
+    8: .standard(proto: "right_time"),
+    9: .standard(proto: "head_valid"),
+    10: .standard(proto: "left_valid"),
+    11: .standard(proto: "right_valid"),
+    12: .standard(proto: "prediction_seconds"),
   ]
 
   fileprivate class _StorageClass {
     var _leftHand: Handtracking_Hand? = nil
     var _rightHand: Handtracking_Hand? = nil
     var _head: Handtracking_Matrix4x4? = nil
+    var _trackingProtocolVersion: UInt32 = 0
+    var _sampleTime: Double = 0
+    var _headTime: Double = 0
+    var _leftTime: Double = 0
+    var _rightTime: Double = 0
+    var _headValid: Bool = false
+    var _leftValid: Bool = false
+    var _rightValid: Bool = false
+    var _predictionSeconds: Double = 0
 
     static let defaultInstance = _StorageClass()
 
@@ -406,6 +469,15 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
       _leftHand = source._leftHand
       _rightHand = source._rightHand
       _head = source._head
+      _trackingProtocolVersion = source._trackingProtocolVersion
+      _sampleTime = source._sampleTime
+      _headTime = source._headTime
+      _leftTime = source._leftTime
+      _rightTime = source._rightTime
+      _headValid = source._headValid
+      _leftValid = source._leftValid
+      _rightValid = source._rightValid
+      _predictionSeconds = source._predictionSeconds
     }
   }
 
@@ -424,6 +496,15 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
         case 1: try { try decoder.decodeSingularMessageField(value: &_storage._leftHand) }()
         case 2: try { try decoder.decodeSingularMessageField(value: &_storage._rightHand) }()
         case 3: try { try decoder.decodeSingularMessageField(value: &_storage._head) }()
+        case 4: try { try decoder.decodeSingularUInt32Field(value: &_storage._trackingProtocolVersion) }()
+        case 5: try { try decoder.decodeSingularDoubleField(value: &_storage._sampleTime) }()
+        case 6: try { try decoder.decodeSingularDoubleField(value: &_storage._headTime) }()
+        case 7: try { try decoder.decodeSingularDoubleField(value: &_storage._leftTime) }()
+        case 8: try { try decoder.decodeSingularDoubleField(value: &_storage._rightTime) }()
+        case 9: try { try decoder.decodeSingularBoolField(value: &_storage._headValid) }()
+        case 10: try { try decoder.decodeSingularBoolField(value: &_storage._leftValid) }()
+        case 11: try { try decoder.decodeSingularBoolField(value: &_storage._rightValid) }()
+        case 12: try { try decoder.decodeSingularDoubleField(value: &_storage._predictionSeconds) }()
         default: break
         }
       }
@@ -441,6 +522,33 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
       try { if let v = _storage._head {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
       } }()
+      if _storage._trackingProtocolVersion != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._trackingProtocolVersion, fieldNumber: 4)
+      }
+      if _storage._sampleTime != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._sampleTime, fieldNumber: 5)
+      }
+      if _storage._headTime != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._headTime, fieldNumber: 6)
+      }
+      if _storage._leftTime != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._leftTime, fieldNumber: 7)
+      }
+      if _storage._rightTime != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._rightTime, fieldNumber: 8)
+      }
+      if _storage._headValid != false {
+        try visitor.visitSingularBoolField(value: _storage._headValid, fieldNumber: 9)
+      }
+      if _storage._leftValid != false {
+        try visitor.visitSingularBoolField(value: _storage._leftValid, fieldNumber: 10)
+      }
+      if _storage._rightValid != false {
+        try visitor.visitSingularBoolField(value: _storage._rightValid, fieldNumber: 11)
+      }
+      if _storage._predictionSeconds != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._predictionSeconds, fieldNumber: 12)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -453,6 +561,15 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
         if _storage._leftHand != rhs_storage._leftHand {return false}
         if _storage._rightHand != rhs_storage._rightHand {return false}
         if _storage._head != rhs_storage._head {return false}
+        if _storage._trackingProtocolVersion != rhs_storage._trackingProtocolVersion {return false}
+        if _storage._sampleTime != rhs_storage._sampleTime {return false}
+        if _storage._headTime != rhs_storage._headTime {return false}
+        if _storage._leftTime != rhs_storage._leftTime {return false}
+        if _storage._rightTime != rhs_storage._rightTime {return false}
+        if _storage._headValid != rhs_storage._headValid {return false}
+        if _storage._leftValid != rhs_storage._leftValid {return false}
+        if _storage._rightValid != rhs_storage._rightValid {return false}
+        if _storage._predictionSeconds != rhs_storage._predictionSeconds {return false}
         return true
       }
       if !storagesAreEqual {return false}

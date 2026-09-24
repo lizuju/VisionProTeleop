@@ -2,6 +2,7 @@ import SwiftUI
 import RealityKit
 import ARKit
 import Foundation
+import QuartzCore
 import GRPCCore
 import GRPCNIOTransportHTTP2
 import GRPCProtobuf
@@ -22,6 +23,13 @@ struct HandTrackingData {
     var leftSkeleton: Skeleton = Skeleton()
     var rightSkeleton: Skeleton = Skeleton()
     var Head: simd_float4x4 = simd_float4x4(1)
+    var headTime: TimeInterval = 0
+    var leftTime: TimeInterval = 0
+    var rightTime: TimeInterval = 0
+    var headValid = false
+    var leftValid = false
+    var rightValid = false
+    var predictionSeconds: TimeInterval = 0
 }
 
 struct BenchmarkEvent {
@@ -360,7 +368,6 @@ class DataManager: ObservableObject {
     @Published var videoPlaneZDistance: Float {
         didSet {
             UserDefaults.standard.set(videoPlaneZDistance, forKey: "videoPlaneZDistance")
-            syncSettingToiCloud("visionos.videoPlaneZDistance", value: Double(videoPlaneZDistance))
         }
     }
     
@@ -368,7 +375,6 @@ class DataManager: ObservableObject {
     @Published var videoPlaneYPosition: Float {
         didSet {
             UserDefaults.standard.set(videoPlaneYPosition, forKey: "videoPlaneYPosition")
-            syncSettingToiCloud("visionos.videoPlaneYPosition", value: Double(videoPlaneYPosition))
         }
     }
     
@@ -386,14 +392,12 @@ class DataManager: ObservableObject {
     @Published var statusMinimizedXPosition: Float {
         didSet {
             UserDefaults.standard.set(statusMinimizedXPosition, forKey: "statusMinimizedXPosition")
-            syncSettingToiCloud("visionos.statusMinimizedXPosition", value: Double(statusMinimizedXPosition))
         }
     }
     
     @Published var statusMinimizedYPosition: Float {
         didSet {
             UserDefaults.standard.set(statusMinimizedYPosition, forKey: "statusMinimizedYPosition")
-            syncSettingToiCloud("visionos.statusMinimizedYPosition", value: Double(statusMinimizedYPosition))
         }
     }
     
@@ -401,7 +405,6 @@ class DataManager: ObservableObject {
     @Published var upperLimbVisible: Bool {
         didSet {
             UserDefaults.standard.set(upperLimbVisible, forKey: "upperLimbVisible")
-            syncSettingToiCloud("visionos.upperLimbVisible", value: upperLimbVisible)
         }
     }
     
@@ -409,7 +412,6 @@ class DataManager: ObservableObject {
     @Published var showHeadBeam: Bool {
         didSet {
             UserDefaults.standard.set(showHeadBeam, forKey: "showHeadBeam")
-            syncSettingToiCloud("visionos.showHeadBeam", value: showHeadBeam)
         }
     }
     
@@ -417,7 +419,6 @@ class DataManager: ObservableObject {
     @Published var showHandJoints: Bool {
         didSet {
             UserDefaults.standard.set(showHandJoints, forKey: "showHandJoints")
-            syncSettingToiCloud("visionos.showHandJoints", value: showHandJoints)
         }
     }
     
@@ -425,7 +426,6 @@ class DataManager: ObservableObject {
     @Published var handJointsOpacity: Float {
         didSet {
             UserDefaults.standard.set(handJointsOpacity, forKey: "handJointsOpacity")
-            syncSettingToiCloud("visionos.handJointsOpacity", value: Double(handJointsOpacity))
         }
     }
     
@@ -435,7 +435,6 @@ class DataManager: ObservableObject {
     @Published var handPredictionOffset: Float {
         didSet {
             UserDefaults.standard.set(handPredictionOffset, forKey: "handPredictionOffset")
-            syncSettingToiCloud("visionos.handPredictionOffset", value: Double(handPredictionOffset))
         }
     }
     
@@ -443,7 +442,6 @@ class DataManager: ObservableObject {
     @Published var videoPlaneScale: Float {
         didSet {
             UserDefaults.standard.set(videoPlaneScale, forKey: "videoPlaneScale")
-            syncSettingToiCloud("visionos.videoPlaneScale", value: Double(videoPlaneScale))
         }
     }
     
@@ -452,7 +450,6 @@ class DataManager: ObservableObject {
     @Published var stereoBaselineOffset: Float {
         didSet {
             UserDefaults.standard.set(stereoBaselineOffset, forKey: "stereoBaselineOffset")
-            syncSettingToiCloud("visionos.stereoBaselineOffset", value: Double(stereoBaselineOffset))
         }
     }
     
@@ -471,15 +468,6 @@ class DataManager: ObservableObject {
     @Published var pythonCalibrationMarkerDetected: Bool = false
     @Published var pythonCalibrationProgress: Float = 0.0
     @Published var pythonCalibrationStepStatus: Int = 0  // 0=collecting, 1=calibrating, 2=complete
-    
-    // MARK: - iCloud Sync Helper
-    
-    private func syncSettingToiCloud<T>(_ key: String, value: T) {
-        let store = NSUbiquitousKeyValueStore.default
-        store.set(value, forKey: key)
-        store.set(Date().timeIntervalSince1970, forKey: "visionos.lastSyncTime")
-        store.synchronize()
-    }
     
     private init() {
         // Load saved video source or default to network
@@ -522,8 +510,8 @@ class DataManager: ObservableObject {
         
         // Load saved hand joints opacity or default to 0.9 (90%)
         self.handJointsOpacity = UserDefaults.standard.object(forKey: "handJointsOpacity") as? Float ?? 0.9
-        // Load saved hand prediction offset or default to 0.033 (33ms)
-        self.handPredictionOffset = UserDefaults.standard.object(forKey: "handPredictionOffset") as? Float ?? 0.033
+        // Load saved hand prediction offset or default to zero for robot control
+        self.handPredictionOffset = UserDefaults.standard.object(forKey: "handPredictionOffset") as? Float ?? 0.0
         // Load saved video plane scale or default to 1.0 (100%)
         self.videoPlaneScale = UserDefaults.standard.object(forKey: "videoPlaneScale") as? Float ?? 1.0
         // Load saved stereo baseline offset or default to 0.0 (no adjustment)
@@ -569,9 +557,7 @@ extension 🥽AppModel {
             @MainActor in
             do {
                 try await self.session.run([self.handTracking, self.worldTracking, self.sceneReconstruction])
-                // Use predictive hand tracking with handAnchors(at:) for lower latency
-                // This polls at 120Hz and queries predicted poses at a future timestamp
-                await self.processHandTrackingPredictive()
+                await self.processHandUpdates()
             } catch {
                 dlog("\(error)")
             }
@@ -626,99 +612,57 @@ extension 🥽AppModel {
     
     @MainActor
     private func queryAndProcessLatestDeviceAnchor() async {
-        // Device anchors are only available when the provider is running.\
-        guard worldTracking.state == .running else { return }
-        
-        let deviceAnchor = worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime())
-        // dlog(" *** device tracking running ")
-//        dlog(deviceAnchor?.originFromAnchorTransform)
-        guard let deviceAnchor else { return }
-        DataManager.shared.latestHandTrackingData.Head = deviceAnchor.originFromAnchorTransform
-            }
+        var tracking = DataManager.shared.latestHandTrackingData
+        tracking.headValid = false
+        if worldTracking.state == .running,
+           let anchor = worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()),
+           anchor.isTracked {
+            tracking.Head = anchor.originFromAnchorTransform
+            tracking.headTime = anchor.timestamp
+            tracking.headValid = true
+        }
+        DataManager.shared.latestHandTrackingData = tracking
+    }
 
-    /// Process hand updates using predictive handAnchors(at:) polling instead of anchorUpdates stream.
-    /// This allows querying predicted hand poses at future timestamps for lower perceived latency.
-    /// The prediction offset is configurable via DataManager.shared.handPredictionOffset (0 to 0.5 seconds).
-    private func processHandUpdatesPredictive() async {
-        guard handTracking.state == .running else { return }
-        
-        // Use pre-computed static joint types array for better performance
-        let jointTypes = Self.jointTypes
-        
-        // Query hand anchors at a slightly future timestamp for prediction
-        // Use configurable prediction offset from DataManager
-        let predictionOffset = TimeInterval(DataManager.shared.handPredictionOffset)
-        let targetTimestamp = CACurrentMediaTime() + predictionOffset
-        let anchors = handTracking.handAnchors(at: targetTimestamp)
-        
-        // Process left hand
-        if let leftAnchor = anchors.leftHand {
-            if leftAnchor.isTracked {
-                DataManager.shared.latestHandTrackingData.leftWrist = leftAnchor.originFromAnchorTransform
-            }
-            
-            if let skeleton = leftAnchor.handSkeleton {
-                for (index, jointType) in jointTypes.enumerated() {
-                    let joint = skeleton.joint(jointType)
-                    DataManager.shared.latestHandTrackingData.leftSkeleton.joints[index] = joint.anchorFromJointTransform
-                }
-            }
-        }
-        
-        // Process right hand
-        if let rightAnchor = anchors.rightHand {
-            if rightAnchor.isTracked {
-                DataManager.shared.latestHandTrackingData.rightWrist = rightAnchor.originFromAnchorTransform
-            }
-            
-            if let skeleton = rightAnchor.handSkeleton {
-                for (index, jointType) in jointTypes.enumerated() {
-                    let joint = skeleton.joint(jointType)
-                    DataManager.shared.latestHandTrackingData.rightSkeleton.joints[index] = joint.anchorFromJointTransform
-                }
-            }
-        }
-    }
-    
-    /// Run predictive hand tracking at high frequency (replaces processHandUpdates)
-    @MainActor
-    func processHandTrackingPredictive() async {
-        await run_device_tracking(function: self.processHandUpdatesPredictive, withFrequency: 120)
-    }
-    
-    /// Legacy: Process hand updates using anchorUpdates stream (event-driven, non-predictive)
     private func processHandUpdates() async {
-        for await update in self.handTracking.anchorUpdates {
-            let handAnchor = update.anchor
-            
-            // Use pre-computed static joint types array for better performance
-            let jointTypes = Self.jointTypes
-            
-            switch handAnchor.chirality {
-            case .left:
-                if handAnchor.isTracked {
-                    DataManager.shared.latestHandTrackingData.leftWrist = handAnchor.originFromAnchorTransform
-                }
-                
-                if let skeleton = handAnchor.handSkeleton {
-                    for (index, jointType) in jointTypes.enumerated() {
-                        let joint = skeleton.joint(jointType)
-                        DataManager.shared.latestHandTrackingData.leftSkeleton.joints[index] = joint.anchorFromJointTransform
-                    }
-                }
-
-            case .right:
-                if handAnchor.isTracked {
-                    DataManager.shared.latestHandTrackingData.rightWrist = handAnchor.originFromAnchorTransform
-                }
-                
-                if let skeleton = handAnchor.handSkeleton {
-                    for (index, jointType) in jointTypes.enumerated() {
-                        let joint = skeleton.joint(jointType)
-                        DataManager.shared.latestHandTrackingData.rightSkeleton.joints[index] = joint.anchorFromJointTransform
-                    }
+        defer {
+            DataManager.shared.latestHandTrackingData.leftValid = false
+            DataManager.shared.latestHandTrackingData.rightValid = false
+        }
+        for await update in handTracking.anchorUpdates {
+            if Task.isCancelled { return }
+            let anchor = update.anchor
+            var tracking = DataManager.shared.latestHandTrackingData
+            let predictionOffset = TimeInterval(DataManager.shared.handPredictionOffset)
+            tracking.predictionSeconds = predictionOffset
+            var poseAnchor = anchor
+            if predictionOffset > 0 {
+                let predicted = handTracking.handAnchors(at: CACurrentMediaTime() + predictionOffset)
+                switch anchor.chirality {
+                case .left: poseAnchor = predicted.leftHand ?? anchor
+                case .right: poseAnchor = predicted.rightHand ?? anchor
                 }
             }
+            // Freshness comes from ARKit events, never from a target-time pose query.
+            let valid = handTracking.state == .running && update.event != .removed
+                && anchor.isTracked && anchor.handSkeleton != nil && poseAnchor.handSkeleton != nil
+            switch anchor.chirality {
+            case .left:
+                tracking.leftValid = valid
+                tracking.leftTime = update.timestamp
+                if valid, let skeleton = poseAnchor.handSkeleton {
+                    tracking.leftWrist = poseAnchor.originFromAnchorTransform
+                    tracking.leftSkeleton.joints = Self.jointTypes.map { skeleton.joint($0).anchorFromJointTransform }
+                }
+            case .right:
+                tracking.rightValid = valid
+                tracking.rightTime = update.timestamp
+                if valid, let skeleton = poseAnchor.handSkeleton {
+                    tracking.rightWrist = poseAnchor.originFromAnchorTransform
+                    tracking.rightSkeleton.joints = Self.jointTypes.map { skeleton.joint($0).anchorFromJointTransform }
+                }
+            }
+            DataManager.shared.latestHandTrackingData = tracking
         }
     }
 }
@@ -732,13 +676,9 @@ extension GRPCCore.RPCWriter: RPCWriterProtocol {}
 
 /// Starts the gRPC server using grpc-swift-2
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+@MainActor
 func startServer() {
-    dlog("📡 [DEBUG] startServer() - Starting gRPC server setup (grpc-swift-2)...")
-    
-    Task {
-        let serverManager = GRPCServerManager()
-        await serverManager.startServer(port: 12345)
-    }
+    GRPCServerManager.shared.startServer()
 }
 
 /// Legacy startServer function for backwards compatibility with older iOS versions
@@ -746,15 +686,25 @@ func startServerLegacy() {
     dlog("⚠️ [DEBUG] Legacy startServer called - grpc-swift-2 requires iOS 18.0+/visionOS 2.0+")
 }
 
+@MainActor
 func fill_handUpdate() -> Handtracking_HandUpdate {
     var handUpdate = Handtracking_HandUpdate()
     
-    // Assuming DataManager provides an ordered list/array of joints for leftSkeleton and rightSkeleton
-    let leftJoints = DataManager.shared.latestHandTrackingData.leftSkeleton.joints
-    let rightJoints = DataManager.shared.latestHandTrackingData.rightSkeleton.joints
-    let leftWrist = DataManager.shared.latestHandTrackingData.leftWrist
-    let rightWrist = DataManager.shared.latestHandTrackingData.rightWrist
-    let Head = DataManager.shared.latestHandTrackingData.Head
+    let tracking = DataManager.shared.latestHandTrackingData
+    let leftJoints = tracking.leftSkeleton.joints
+    let rightJoints = tracking.rightSkeleton.joints
+    let leftWrist = tracking.leftWrist
+    let rightWrist = tracking.rightWrist
+    let Head = tracking.Head
+    handUpdate.trackingProtocolVersion = 1
+    handUpdate.sampleTime = CACurrentMediaTime()
+    handUpdate.headTime = tracking.headTime
+    handUpdate.leftTime = tracking.leftTime
+    handUpdate.rightTime = tracking.rightTime
+    handUpdate.headValid = tracking.headValid
+    handUpdate.leftValid = tracking.leftValid
+    handUpdate.rightValid = tracking.rightValid
+    handUpdate.predictionSeconds = tracking.predictionSeconds
     
     
     handUpdate.leftHand.wristMatrix = createMatrix4x4(from: leftWrist)

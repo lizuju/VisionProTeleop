@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-async-algorithms.git",
       "state" : {
-        "revision" : "2773d4125311133a2f705ec374c363a935069d45",
-        "version" : "1.1.0"
+        "revision" : "2971dd5d9f6e0515664b01044826bcea16e59fac",
+        "version" : "1.1.2"
       }
     },
     {
@@ -201,7 +201,7 @@
     {
       "identity" : "webrtc-xcframework",
       "kind" : "remoteSourceControl",
-      "location" : "git@github.com:livekit/webrtc-xcframework.git",
+      "location" : "https://github.com/livekit/webrtc-xcframework.git",
       "state" : {
         "revision" : "5b40f56c637369064b9c82e8f9cfa820f942658f",
         "version" : "137.7151.10"

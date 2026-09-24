@@ -37,7 +37,20 @@ message Hand {
 message HandUpdate {
   Hand left_hand = 1;
   Hand right_hand = 2;
-  Matrix4x4 Head = 3; 
+  Matrix4x4 Head = 3;
+
+  // R1 tracking protocol v1: source times use the Vision Pro monotonic clock.
+  // sample_time is serialization time; *_time are ARKit anchor timestamps.
+  // A valid hand requires a tracked anchor and all of its first 25 joints.
+  uint32 tracking_protocol_version = 4;
+  double sample_time = 5;
+  double head_time = 6;
+  double left_time = 7;
+  double right_time = 8;
+  bool head_valid = 9;
+  bool left_valid = 10;
+  bool right_valid = 11;
+  double prediction_seconds = 12;
 }
 
 // The hand tracking service definition.

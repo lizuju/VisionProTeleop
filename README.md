@@ -1,3 +1,5 @@
+> **R1 fork:** 原生机器人输入的改动、安装与配套版本请看 [R1 安装说明](README-R1-安装.md)。
+
 <!-- omit in toc -->
 VisionProTeleop
 ===========

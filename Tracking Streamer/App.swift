@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct VisionProTeleopApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var imageData = ImageData()
     @StateObject private var appModel = 🥽AppModel()
     
@@ -10,6 +11,16 @@ struct VisionProTeleopApp: App {
             ContentView()
         }
         .windowResizability(.contentSize)
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            switch phase {
+            case .active:
+                startServer()
+            case .background:
+                GRPCServerManager.shared.stopServer()
+            default:
+                break
+            }
+        }
         
         // Hand tracking view (existing)
         ImmersiveSpace(id: "immersiveSpace") {
@@ -32,30 +43,16 @@ struct VisionProTeleopApp: App {
             CombinedStreamingView()
                 .environmentObject(imageData)
         }
+        .immersionStyle(selection: .constant(.mixed), in: .mixed)
     }
     
     init() {
+        UserDefaults.standard.set(true, forKey: "dontShowSignInAgain")
+        UserDefaults.standard.set(true, forKey: "dontShowIOSPromoAgain")
         dlog("🚀 [DEBUG] VisionProTeleopApp.init() - App launching...")
         🧑HeadTrackingComponent.registerComponent()
         🧑HeadTrackingSystem.registerSystem()
         
-        // Start gRPC server immediately when app launches
-        dlog("🌐 [DEBUG] Starting gRPC server on app launch...")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            dlog("🔧 [DEBUG] Calling startServer() from app init...")
-            startServer()
-        }
-        
-        // Configure settings sync from iOS
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            Task { @MainActor in
-                VisionOSSettingsSync.shared.configure(
-                    dataManager: DataManager.shared,
-                    recordingManager: RecordingManager.shared
-                )
-                dlog("☁️ [DEBUG] VisionOS settings sync configured")
-            }
-        }
     }
 }
 

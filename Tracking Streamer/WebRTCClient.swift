@@ -482,7 +482,7 @@ class WebRTCClient: NSObject, LKRTCPeerConnectionDelegate, @unchecked Sendable {
             while !Task.isCancelled {
                 guard let _ = self else { return }
                 do {
-                    let update = fill_handUpdate()
+                    let update = await fill_handUpdate()
                     let payload = try update.serializedData()
                     let buffer = LKRTCDataBuffer(data: payload, isBinary: true)
 

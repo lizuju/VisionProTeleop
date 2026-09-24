@@ -5,56 +5,75 @@ import QuartzCore
 
 /// Manages the gRPC server for hand tracking using grpc-swift-2
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+@MainActor
 final class GRPCServerManager: ObservableObject {
-    private var grpcServer: GRPCServer<HTTP2ServerTransport.Posix>?
-    private var currentPort: Int = 12345
-    
-    func startServer(port: Int = 12345) async {
-        self.currentPort = port
-        dlog("🚀 Starting gRPC server...")
-        do {
-            // Create the service implementation
-            let handTrackingService = HandTrackingServiceImpl()
-            dlog("✅ Created HandTrackingServiceImpl")
-            
-            // Create the gRPC server with NIO transport
+    static let shared = GRPCServerManager()
+
+    private var serverTask: Task<Void, Never>?
+    private var isStopping = false
+    private var restartAfterStop = false
+    private var currentPort = 12345
+
+    private init() {}
+
+    func startServer(port: Int = 12345) {
+        guard serverTask == nil else {
+            if isStopping {
+                restartAfterStop = true
+            }
+            return
+        }
+        currentPort = port
+        DataManager.shared.grpcServerReady = false
+
+        serverTask = Task {
+            defer {
+                DataManager.shared.grpcServerReady = false
+                serverTask = nil
+                isStopping = false
+                if restartAfterStop {
+                    restartAfterStop = false
+                    startServer(port: currentPort)
+                }
+            }
+            guard !Task.isCancelled else { return }
+
             let transport = HTTP2ServerTransport.Posix(
-                address: .ipv4(host: "0.0.0.0", port: currentPort),
+                address: .ipv4(host: "0.0.0.0", port: port),
                 transportSecurity: .plaintext
             )
-            dlog("✅ Created HTTP2ServerTransport on port \(currentPort)")
-            
             let server = GRPCServer(
                 transport: transport,
-                services: [handTrackingService]
+                services: [HandTrackingServiceImpl()]
             )
-            dlog("✅ Created GRPCServer with service")
-            
-            self.grpcServer = server
-            
-            // Mark server as ready
-            await MainActor.run {
-                DataManager.shared.grpcServerReady = true
+
+            do {
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    group.addTask {
+                        try await server.serve()
+                    }
+                    let address = try await transport.listeningAddress
+                    try Task.checkCancellation()
+                    DataManager.shared.grpcServerReady = true
+                    dlog("🚀 gRPC server listening on \(address)")
+                    try await group.waitForAll()
+                }
+            } catch {
+                if !Task.isCancelled {
+                    dlog("❌ gRPC server ended: \(error)")
+                }
             }
-            
-            dlog("🎯 Starting server.serve()...")
-            try await server.serve()
-            dlog("🚀 gRPC server started successfully on port \(currentPort)")
-            
-        } catch {
-            dlog("❌ Failed to start gRPC server: \(error)")
-            dlog("🔍 Error details: \(error.localizedDescription)")
+            dlog("🛑 gRPC server stopped")
         }
     }
-    
-    func stopServer() async {
-        if let server = self.grpcServer {
-            server.beginGracefulShutdown()
-            dlog("🛑 gRPC server stopped")
-            self.grpcServer = nil
-        } else {
-            dlog("ℹ️ gRPC server was not running")
-        }
+
+    func stopServer() {
+        restartAfterStop = false
+        DataManager.shared.grpcServerReady = false
+        guard let serverTask else { return }
+        isStopping = true
+        // Cancelling also ends streaming RPCs, so resume can rebind the same port.
+        serverTask.cancel()
     }
 }
 
@@ -137,7 +156,8 @@ struct HandTrackingServiceImpl: Handtracking_HandTrackingService.SimpleServicePr
             }
             
             // Send one response and return for info-only connections
-            try await response.write(fill_handUpdate())
+            let update = await fill_handUpdate()
+            try await response.write(update)
             return
         } else if request.head.m00 == 778.0 {
             // Python calibration mode signal
@@ -153,7 +173,8 @@ struct HandTrackingServiceImpl: Handtracking_HandTrackingService.SimpleServicePr
                 DataManager.shared.pythonCalibrationStepStatus = Int(request.head.m13)
             }
             // Send response and return for calibration status messages
-            try await response.write(fill_handUpdate())
+            let update = await fill_handUpdate()
+            try await response.write(update)
             return
         } else {
             dlog("⚠️ [DEBUG] Not a special message (expected m00=888.0, 999.0, or 778.0, got \(request.head.m00))")
@@ -208,7 +229,7 @@ struct HandTrackingServiceImpl: Handtracking_HandTrackingService.SimpleServicePr
             // generator
             let task = Task {
                 while !Task.isCancelled {
-                    let update = fill_handUpdate()
+                    let update = await fill_handUpdate()
                     updateCount += 1
                     continuation.yield(update)
                     

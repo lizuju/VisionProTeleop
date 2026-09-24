@@ -29,7 +29,6 @@ struct ContentView: View {
     @State private var showVideoStream = false
     @AppStorage("pythonServerIP") private var pythonServerIP = "10.29.239.70"
     @State private var showSettings = false
-    @State private var serverReady = false
     @State private var onboardingState: OnboardingState = .mainView
     @StateObject private var googleAuthManager = GoogleDriveAuthManager.shared
     @StateObject private var dropboxAuthManager = DropboxAuthManager.shared
@@ -175,6 +174,7 @@ struct ContentView: View {
     
     /// Handle START button press - determines which onboarding flow to show
     private func handleStartButton() {
+        startServer()
         // No cloud storage configured - show sign-in prompt unless user opted out
         if !isCloudStorageConfigured {
             if !dontShowSignInAgain {
@@ -309,12 +309,12 @@ struct ContentView: View {
                     // Server status
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(serverReady ? Color.green : Color.orange)
+                            .fill(dataManager.grpcServerReady ? Color.green : Color.orange)
                             .frame(width: 10, height: 10)
-                            .shadow(color: serverReady ? Color.green.opacity(0.6) : Color.orange.opacity(0.6), radius: 4)
-                        Text(serverReady ? "gRPC Server Ready" : "Starting gRPC...")
+                            .shadow(color: dataManager.grpcServerReady ? Color.green.opacity(0.6) : Color.orange.opacity(0.6), radius: 4)
+                        Text(dataManager.grpcServerReady ? "gRPC Server Ready" : "Starting gRPC...")
                             .font(.caption.weight(.medium))
-                            .foregroundColor(serverReady ? .green : .orange)
+                            .foregroundColor(dataManager.grpcServerReady ? .green : .orange)
                     }
                 }
                 .frame(minWidth: 200)
@@ -384,15 +384,6 @@ struct ContentView: View {
                     }
                 }
                 .frame(minWidth: 200)
-            }
-            .onAppear {
-                // Poll for server ready status (keep polling even if hidden, so state is ready when switching back)
-                Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                    serverReady = DataManager.shared.grpcServerReady
-                    if serverReady {
-                        timer.invalidate()
-                    }
-                }
             }
             
             // Exit button
