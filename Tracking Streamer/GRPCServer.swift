@@ -180,8 +180,11 @@ struct HandTrackingServiceImpl: Handtracking_HandTrackingService.SimpleServicePr
             dlog("⚠️ [DEBUG] Not a special message (expected m00=888.0, 999.0, or 778.0, got \(request.head.m00))")
         }
         
-        // Register for benchmark events
-        if !isWebRTCInfoOnly {
+        let streamID = UUID()
+        await MainActor.run {
+            DataManager.shared.handTrackingStreamID = streamID
+            DataManager.shared.robotTrackingLastWriteMs = 0
+            DataManager.shared.robotTrackingPacketsSent = 0
             BenchmarkEventDispatcher.shared.register(responseWriter: response)
         }
         
@@ -210,6 +213,9 @@ struct HandTrackingServiceImpl: Handtracking_HandTrackingService.SimpleServicePr
             // Cleanup on disconnect (same as normal disconnect)
             dlog("🧹 [VERSION] Cleaning up after blocked client disconnect")
             await MainActor.run {
+                guard DataManager.shared.handTrackingStreamID == streamID else { return }
+                DataManager.shared.handTrackingStreamID = nil
+                BenchmarkEventDispatcher.shared.clear()
                 DataManager.shared.pythonClientIP = nil
                 DataManager.shared.pythonLibraryVersionCode = 0
                 DataManager.shared.webrtcServerInfo = nil
@@ -221,46 +227,62 @@ struct HandTrackingServiceImpl: Handtracking_HandTrackingService.SimpleServicePr
         dlog("🔄 [DEBUG] Starting hand tracking data stream...")
         dlog("⏱️ [DEBUG] Starting hand tracking updates...")
 
-        var updateCount = 0
-        
-        // create a stream that buffers only newest item
-        let handPoseStream = AsyncStream(Handtracking_HandUpdate.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
-            
-            // generator
-            let task = Task {
-                while !Task.isCancelled {
-                    let update = await fill_handUpdate()
-                    updateCount += 1
-                    continuation.yield(update)
-                    
-                    // Stream at approximately 200Hz (5ms delay)
-                    try? await Task.sleep(nanoseconds: 5_000_000)
-                }
-                continuation.finish()
-            }
-            
-            continuation.onTermination = { _ in
-                task.cancel()
-            }
-        }
-        
-        // sample the latest frame from the stream
-        for await handUpdate in handPoseStream {
+        var lastUpdate: Handtracking_HandUpdate?
+        var lastSendTime = -Double.infinity
+        var packetsSent: UInt64 = 0
+        var lastWriteMs = 0.0
+        var lastMetricsAt = -Double.infinity
+
+        while !Task.isCancelled {
+            var update = await fill_handUpdate()
+            let sampledAt = update.sampleTime
+            var comparison = update
+            // Heartbeat/transport metrics do not make unchanged anchor data new.
+            comparison.sampleTime = lastUpdate?.sampleTime ?? 0
+            comparison.lastWriteMs = lastUpdate?.lastWriteMs ?? 0
+            comparison.packetsSent = lastUpdate?.packetsSent ?? 0
             do {
-                try await response.write(handUpdate)
+                if comparison != lastUpdate || sampledAt - lastSendTime >= 0.1 {
+                    try Task.checkCancellation()
+                    update.lastWriteMs = lastWriteMs
+                    update.packetsSent = packetsSent + 1
+                    let writeStartedAt = CACurrentMediaTime()
+                    try await response.write(update)
+                    let writeCompletedAt = CACurrentMediaTime()
+                    lastWriteMs = (writeCompletedAt - writeStartedAt) * 1_000
+                    packetsSent += 1
+                    lastSendTime = sampledAt
+                    lastUpdate = update
+                    if writeCompletedAt - lastMetricsAt >= 0.25 {
+                        lastMetricsAt = writeCompletedAt
+                        let completedWriteMs = lastWriteMs
+                        let completedPackets = packetsSent
+                        await MainActor.run {
+                            guard DataManager.shared.handTrackingStreamID == streamID else { return }
+                            DataManager.shared.robotTrackingLastWriteMs = completedWriteMs
+                            DataManager.shared.robotTrackingPacketsSent = completedPackets
+                        }
+                    }
+                }
+                // No producer queue: after backpressure, sample current anchors again.
+                let delay = max(0, 1.0 / 120 - (CACurrentMediaTime() - sampledAt))
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             } catch {
-                dlog("🔌 [DEBUG] Client disconnected or error writing: \(error)")
+                if !Task.isCancelled {
+                    dlog("🔌 [DEBUG] Client disconnected or error writing: \(error)")
+                }
                 break
             }
         }
-        
-        dlog("🔌 [DEBUG] Stream ended. Sent \(updateCount) updates.")
-        
+
+        dlog("🔌 [DEBUG] Stream ended. Sent \(packetsSent) updates.")
+
         // Cleanup on disconnect
         if !isWebRTCInfoOnly {
-            BenchmarkEventDispatcher.shared.clear()
-            
             await MainActor.run {
+                guard DataManager.shared.handTrackingStreamID == streamID else { return }
+                DataManager.shared.handTrackingStreamID = nil
+                BenchmarkEventDispatcher.shared.clear()
                 dlog("🧹 [DEBUG] Cleaning up connection state after main client disconnect")
                 DataManager.shared.pythonClientIP = nil
                 DataManager.shared.pythonLibraryVersionCode = 0  // Reset version on disconnect

@@ -91,7 +91,7 @@ struct MuJoCoStreamingView: View {
         .task {
             dlog("🚀 [MuJoCoStreamingView] Starting initialization...")
             networkManager.updateNetworkInfo()
-            appModel.run()
+            await appModel.run()
         }
         .task {
             await appModel.processDeviceAnchorUpdates()

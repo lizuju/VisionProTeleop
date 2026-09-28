@@ -8,7 +8,6 @@
 // For information on using the generated types, please see the documentation:
 //   https://github.com/apple/swift-protobuf/
 
-import Foundation
 import SwiftProtobuf
 
 // If the compiler emits an error on this type, it is because this file
@@ -144,6 +143,9 @@ public struct Handtracking_HandUpdate: @unchecked Sendable {
   /// Clears the value of `head`. Subsequent reads from it will return its default value.
   public mutating func clearHead() {_uniqueStorage()._head = nil}
 
+  /// R1 tracking protocol v1: source times use the Vision Pro monotonic clock.
+  /// sample_time is serialization time; *_time are ARKit anchor timestamps.
+  /// A valid hand requires a tracked anchor and all of its first 25 joints.
   public var trackingProtocolVersion: UInt32 {
     get {return _storage._trackingProtocolVersion}
     set {_uniqueStorage()._trackingProtocolVersion = newValue}
@@ -189,6 +191,68 @@ public struct Handtracking_HandUpdate: @unchecked Sendable {
     set {_uniqueStorage()._predictionSeconds = newValue}
   }
 
+  /// Diagnostics capability v1; additive to tracking protocol v1.
+  /// Loss counters persist for the app lifetime and count valid-to-invalid edges,
+  /// including edges hidden by sender/receiver coalescing. head_loss_seq includes
+  /// both raw head tracking loss and the first-person video gate.
+  public var diagnosticsVersion: UInt32 {
+    get {return _storage._diagnosticsVersion}
+    set {_uniqueStorage()._diagnosticsVersion = newValue}
+  }
+
+  public var headAnchorValid: Bool {
+    get {return _storage._headAnchorValid}
+    set {_uniqueStorage()._headAnchorValid = newValue}
+  }
+
+  public var videoRequired: Bool {
+    get {return _storage._videoRequired}
+    set {_uniqueStorage()._videoRequired = newValue}
+  }
+
+  public var videoReady: Bool {
+    get {return _storage._videoReady}
+    set {_uniqueStorage()._videoReady = newValue}
+  }
+
+  public var videoReason: String {
+    get {return _storage._videoReason}
+    set {_uniqueStorage()._videoReason = newValue}
+  }
+
+  public var headLossSeq: UInt64 {
+    get {return _storage._headLossSeq}
+    set {_uniqueStorage()._headLossSeq = newValue}
+  }
+
+  public var leftLossSeq: UInt64 {
+    get {return _storage._leftLossSeq}
+    set {_uniqueStorage()._leftLossSeq = newValue}
+  }
+
+  public var rightLossSeq: UInt64 {
+    get {return _storage._rightLossSeq}
+    set {_uniqueStorage()._rightLossSeq = newValue}
+  }
+
+  /// Previous local RPC write duration; not a network RTT or delivery ack.
+  public var lastWriteMs: Double {
+    get {return _storage._lastWriteMs}
+    set {_uniqueStorage()._lastWriteMs = newValue}
+  }
+
+  /// Ordinal of this pose packet within the current RPC, starting at one.
+  public var packetsSent: UInt64 {
+    get {return _storage._packetsSent}
+    set {_uniqueStorage()._packetsSent = newValue}
+  }
+
+  /// Cause of the most recent head_loss_seq edge, retained after recovery.
+  public var headLossReason: String {
+    get {return _storage._headLossReason}
+    set {_uniqueStorage()._headLossReason = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -215,27 +279,13 @@ fileprivate let _protobuf_package = "handtracking"
 
 extension Handtracking_Matrix4x4: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Matrix4x4"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "m00"),
-    2: .same(proto: "m01"),
-    3: .same(proto: "m02"),
-    4: .same(proto: "m03"),
-    5: .same(proto: "m10"),
-    6: .same(proto: "m11"),
-    7: .same(proto: "m12"),
-    8: .same(proto: "m13"),
-    9: .same(proto: "m20"),
-    10: .same(proto: "m21"),
-    11: .same(proto: "m22"),
-    12: .same(proto: "m23"),
-    13: .same(proto: "m30"),
-    14: .same(proto: "m31"),
-    15: .same(proto: "m32"),
-    16: .same(proto: "m33"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}m00\0\u{1}m01\0\u{1}m02\0\u{1}m03\0\u{1}m10\0\u{1}m11\0\u{1}m12\0\u{1}m13\0\u{1}m20\0\u{1}m21\0\u{1}m22\0\u{1}m23\0\u{1}m30\0\u{1}m31\0\u{1}m32\0\u{1}m33\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularFloatField(value: &self.m00) }()
       case 2: try { try decoder.decodeSingularFloatField(value: &self.m01) }()
@@ -259,52 +309,52 @@ extension Handtracking_Matrix4x4: SwiftProtobuf.Message, SwiftProtobuf._MessageI
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.m00 != 0 {
+    if self.m00.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m00, fieldNumber: 1)
     }
-    if self.m01 != 0 {
+    if self.m01.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m01, fieldNumber: 2)
     }
-    if self.m02 != 0 {
+    if self.m02.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m02, fieldNumber: 3)
     }
-    if self.m03 != 0 {
+    if self.m03.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m03, fieldNumber: 4)
     }
-    if self.m10 != 0 {
+    if self.m10.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m10, fieldNumber: 5)
     }
-    if self.m11 != 0 {
+    if self.m11.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m11, fieldNumber: 6)
     }
-    if self.m12 != 0 {
+    if self.m12.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m12, fieldNumber: 7)
     }
-    if self.m13 != 0 {
+    if self.m13.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m13, fieldNumber: 8)
     }
-    if self.m20 != 0 {
+    if self.m20.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m20, fieldNumber: 9)
     }
-    if self.m21 != 0 {
+    if self.m21.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m21, fieldNumber: 10)
     }
-    if self.m22 != 0 {
+    if self.m22.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m22, fieldNumber: 11)
     }
-    if self.m23 != 0 {
+    if self.m23.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m23, fieldNumber: 12)
     }
-    if self.m30 != 0 {
+    if self.m30.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m30, fieldNumber: 13)
     }
-    if self.m31 != 0 {
+    if self.m31.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m31, fieldNumber: 14)
     }
-    if self.m32 != 0 {
+    if self.m32.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m32, fieldNumber: 15)
     }
-    if self.m33 != 0 {
+    if self.m33.bitPattern != 0 {
       try visitor.visitSingularFloatField(value: self.m33, fieldNumber: 16)
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -334,12 +384,13 @@ extension Handtracking_Matrix4x4: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 
 extension Handtracking_Skeleton: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Skeleton"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "jointMatrices"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}jointMatrices\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.jointMatrices) }()
       default: break
@@ -363,16 +414,17 @@ extension Handtracking_Skeleton: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 
 extension Handtracking_Hand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Hand"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "wristMatrix"),
-    2: .same(proto: "skeleton"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}wristMatrix\0\u{1}skeleton\0")
 
   fileprivate class _StorageClass {
     var _wristMatrix: Handtracking_Matrix4x4? = nil
     var _skeleton: Handtracking_Skeleton? = nil
 
-    static let defaultInstance = _StorageClass()
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
 
     private init() {}
 
@@ -393,6 +445,9 @@ extension Handtracking_Hand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
         switch fieldNumber {
         case 1: try { try decoder.decodeSingularMessageField(value: &_storage._wristMatrix) }()
         case 2: try { try decoder.decodeSingularMessageField(value: &_storage._skeleton) }()
@@ -404,6 +459,10 @@ extension Handtracking_Hand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
       try { if let v = _storage._wristMatrix {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
       } }()
@@ -432,20 +491,7 @@ extension Handtracking_Hand: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 
 extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".HandUpdate"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "left_hand"),
-    2: .standard(proto: "right_hand"),
-    3: .same(proto: "Head"),
-    4: .standard(proto: "tracking_protocol_version"),
-    5: .standard(proto: "sample_time"),
-    6: .standard(proto: "head_time"),
-    7: .standard(proto: "left_time"),
-    8: .standard(proto: "right_time"),
-    9: .standard(proto: "head_valid"),
-    10: .standard(proto: "left_valid"),
-    11: .standard(proto: "right_valid"),
-    12: .standard(proto: "prediction_seconds"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}left_hand\0\u{3}right_hand\0\u{1}Head\0\u{3}tracking_protocol_version\0\u{3}sample_time\0\u{3}head_time\0\u{3}left_time\0\u{3}right_time\0\u{3}head_valid\0\u{3}left_valid\0\u{3}right_valid\0\u{3}prediction_seconds\0\u{3}diagnostics_version\0\u{3}head_anchor_valid\0\u{3}video_required\0\u{3}video_ready\0\u{3}video_reason\0\u{3}head_loss_seq\0\u{3}left_loss_seq\0\u{3}right_loss_seq\0\u{3}last_write_ms\0\u{3}packets_sent\0\u{3}head_loss_reason\0")
 
   fileprivate class _StorageClass {
     var _leftHand: Handtracking_Hand? = nil
@@ -460,8 +506,23 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
     var _leftValid: Bool = false
     var _rightValid: Bool = false
     var _predictionSeconds: Double = 0
+    var _diagnosticsVersion: UInt32 = 0
+    var _headAnchorValid: Bool = false
+    var _videoRequired: Bool = false
+    var _videoReady: Bool = false
+    var _videoReason: String = String()
+    var _headLossSeq: UInt64 = 0
+    var _leftLossSeq: UInt64 = 0
+    var _rightLossSeq: UInt64 = 0
+    var _lastWriteMs: Double = 0
+    var _packetsSent: UInt64 = 0
+    var _headLossReason: String = String()
 
-    static let defaultInstance = _StorageClass()
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
 
     private init() {}
 
@@ -478,6 +539,17 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
       _leftValid = source._leftValid
       _rightValid = source._rightValid
       _predictionSeconds = source._predictionSeconds
+      _diagnosticsVersion = source._diagnosticsVersion
+      _headAnchorValid = source._headAnchorValid
+      _videoRequired = source._videoRequired
+      _videoReady = source._videoReady
+      _videoReason = source._videoReason
+      _headLossSeq = source._headLossSeq
+      _leftLossSeq = source._leftLossSeq
+      _rightLossSeq = source._rightLossSeq
+      _lastWriteMs = source._lastWriteMs
+      _packetsSent = source._packetsSent
+      _headLossReason = source._headLossReason
     }
   }
 
@@ -492,6 +564,9 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
     _ = _uniqueStorage()
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
       while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
         switch fieldNumber {
         case 1: try { try decoder.decodeSingularMessageField(value: &_storage._leftHand) }()
         case 2: try { try decoder.decodeSingularMessageField(value: &_storage._rightHand) }()
@@ -505,6 +580,17 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
         case 10: try { try decoder.decodeSingularBoolField(value: &_storage._leftValid) }()
         case 11: try { try decoder.decodeSingularBoolField(value: &_storage._rightValid) }()
         case 12: try { try decoder.decodeSingularDoubleField(value: &_storage._predictionSeconds) }()
+        case 13: try { try decoder.decodeSingularUInt32Field(value: &_storage._diagnosticsVersion) }()
+        case 14: try { try decoder.decodeSingularBoolField(value: &_storage._headAnchorValid) }()
+        case 15: try { try decoder.decodeSingularBoolField(value: &_storage._videoRequired) }()
+        case 16: try { try decoder.decodeSingularBoolField(value: &_storage._videoReady) }()
+        case 17: try { try decoder.decodeSingularStringField(value: &_storage._videoReason) }()
+        case 18: try { try decoder.decodeSingularUInt64Field(value: &_storage._headLossSeq) }()
+        case 19: try { try decoder.decodeSingularUInt64Field(value: &_storage._leftLossSeq) }()
+        case 20: try { try decoder.decodeSingularUInt64Field(value: &_storage._rightLossSeq) }()
+        case 21: try { try decoder.decodeSingularDoubleField(value: &_storage._lastWriteMs) }()
+        case 22: try { try decoder.decodeSingularUInt64Field(value: &_storage._packetsSent) }()
+        case 23: try { try decoder.decodeSingularStringField(value: &_storage._headLossReason) }()
         default: break
         }
       }
@@ -513,6 +599,10 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
       try { if let v = _storage._leftHand {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
       } }()
@@ -525,16 +615,16 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
       if _storage._trackingProtocolVersion != 0 {
         try visitor.visitSingularUInt32Field(value: _storage._trackingProtocolVersion, fieldNumber: 4)
       }
-      if _storage._sampleTime != 0 {
+      if _storage._sampleTime.bitPattern != 0 {
         try visitor.visitSingularDoubleField(value: _storage._sampleTime, fieldNumber: 5)
       }
-      if _storage._headTime != 0 {
+      if _storage._headTime.bitPattern != 0 {
         try visitor.visitSingularDoubleField(value: _storage._headTime, fieldNumber: 6)
       }
-      if _storage._leftTime != 0 {
+      if _storage._leftTime.bitPattern != 0 {
         try visitor.visitSingularDoubleField(value: _storage._leftTime, fieldNumber: 7)
       }
-      if _storage._rightTime != 0 {
+      if _storage._rightTime.bitPattern != 0 {
         try visitor.visitSingularDoubleField(value: _storage._rightTime, fieldNumber: 8)
       }
       if _storage._headValid != false {
@@ -546,8 +636,41 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
       if _storage._rightValid != false {
         try visitor.visitSingularBoolField(value: _storage._rightValid, fieldNumber: 11)
       }
-      if _storage._predictionSeconds != 0 {
+      if _storage._predictionSeconds.bitPattern != 0 {
         try visitor.visitSingularDoubleField(value: _storage._predictionSeconds, fieldNumber: 12)
+      }
+      if _storage._diagnosticsVersion != 0 {
+        try visitor.visitSingularUInt32Field(value: _storage._diagnosticsVersion, fieldNumber: 13)
+      }
+      if _storage._headAnchorValid != false {
+        try visitor.visitSingularBoolField(value: _storage._headAnchorValid, fieldNumber: 14)
+      }
+      if _storage._videoRequired != false {
+        try visitor.visitSingularBoolField(value: _storage._videoRequired, fieldNumber: 15)
+      }
+      if _storage._videoReady != false {
+        try visitor.visitSingularBoolField(value: _storage._videoReady, fieldNumber: 16)
+      }
+      if !_storage._videoReason.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._videoReason, fieldNumber: 17)
+      }
+      if _storage._headLossSeq != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._headLossSeq, fieldNumber: 18)
+      }
+      if _storage._leftLossSeq != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._leftLossSeq, fieldNumber: 19)
+      }
+      if _storage._rightLossSeq != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._rightLossSeq, fieldNumber: 20)
+      }
+      if _storage._lastWriteMs.bitPattern != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._lastWriteMs, fieldNumber: 21)
+      }
+      if _storage._packetsSent != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._packetsSent, fieldNumber: 22)
+      }
+      if !_storage._headLossReason.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._headLossReason, fieldNumber: 23)
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -570,6 +693,17 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
         if _storage._leftValid != rhs_storage._leftValid {return false}
         if _storage._rightValid != rhs_storage._rightValid {return false}
         if _storage._predictionSeconds != rhs_storage._predictionSeconds {return false}
+        if _storage._diagnosticsVersion != rhs_storage._diagnosticsVersion {return false}
+        if _storage._headAnchorValid != rhs_storage._headAnchorValid {return false}
+        if _storage._videoRequired != rhs_storage._videoRequired {return false}
+        if _storage._videoReady != rhs_storage._videoReady {return false}
+        if _storage._videoReason != rhs_storage._videoReason {return false}
+        if _storage._headLossSeq != rhs_storage._headLossSeq {return false}
+        if _storage._leftLossSeq != rhs_storage._leftLossSeq {return false}
+        if _storage._rightLossSeq != rhs_storage._rightLossSeq {return false}
+        if _storage._lastWriteMs != rhs_storage._lastWriteMs {return false}
+        if _storage._packetsSent != rhs_storage._packetsSent {return false}
+        if _storage._headLossReason != rhs_storage._headLossReason {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -581,12 +715,13 @@ extension Handtracking_HandUpdate: SwiftProtobuf.Message, SwiftProtobuf._Message
 
 extension Handtracking_HandUpdateAck: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".HandUpdateAck"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "message"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}message\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.message) }()
       default: break

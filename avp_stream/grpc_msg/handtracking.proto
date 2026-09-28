@@ -51,6 +51,25 @@ message HandUpdate {
   bool left_valid = 10;
   bool right_valid = 11;
   double prediction_seconds = 12;
+
+  // Diagnostics capability v1; additive to tracking protocol v1.
+  // Loss counters persist for the app lifetime and count valid-to-invalid edges,
+  // including edges hidden by sender/receiver coalescing. head_loss_seq includes
+  // both raw head tracking loss and the first-person video gate.
+  uint32 diagnostics_version = 13;
+  bool head_anchor_valid = 14;
+  bool video_required = 15;
+  bool video_ready = 16;
+  string video_reason = 17;
+  uint64 head_loss_seq = 18;
+  uint64 left_loss_seq = 19;
+  uint64 right_loss_seq = 20;
+  // Previous local RPC write duration; not a network RTT or delivery ack.
+  double last_write_ms = 21;
+  // Ordinal of this pose packet within the current RPC, starting at one.
+  uint64 packets_sent = 22;
+  // Cause of the most recent head_loss_seq edge, retained after recovery.
+  string head_loss_reason = 23;
 }
 
 // The hand tracking service definition.

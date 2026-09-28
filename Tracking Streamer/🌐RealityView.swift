@@ -137,7 +137,7 @@ struct 🌐RealityView: View {
             TapGesture()
                 .targetedToAnyEntity()
         )
-        .task { self.model.run() }
+        .task { await self.model.run() }
         .task { await self.model.processDeviceAnchorUpdates() }
         // .task { self.model.startserver() }
         .task(priority: .low) { await self.model.processReconstructionUpdates() }

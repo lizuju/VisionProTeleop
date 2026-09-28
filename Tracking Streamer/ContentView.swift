@@ -27,6 +27,9 @@ struct ContentView: View {
     @Environment(\.openImmersiveSpace) var openImmersiveSpace
     @Environment(\.dismissWindow) var dismissWindow
     @State private var showVideoStream = false
+    @AppStorage("r1VideoHost") private var robotVideoHost = "192.168.124.147"
+    @State private var robotOpening = false
+    @State private var robotOpenError: String?
     @AppStorage("pythonServerIP") private var pythonServerIP = "10.29.239.70"
     @State private var showSettings = false
     @State private var onboardingState: OnboardingState = .mainView
@@ -167,6 +170,8 @@ struct ContentView: View {
             signalingClient.connect()
             DataManager.shared.crossNetworkRoomCode = signalingClient.roomCode
             
+            DataManager.shared.robotVideoRequired = false
+            DataManager.shared.robotVideoPresentedAt = 0
             await self.openImmersiveSpace(id: "combinedStreamSpace")
             self.dismissWindow()
         }
@@ -217,10 +222,11 @@ struct ContentView: View {
     
     // MARK: - Main Content View
     private var mainContentView: some View {
-        VStack(spacing: 32) {
+        ScrollView {
+        VStack(spacing: 22) {
             VStack(spacing: 4) {
                 Text("VisionProTeleop")
-                    .font(.system(size: 72, weight: .bold))
+                    .font(.system(size: 44, weight: .bold))
                     .foregroundColor(.white)
                 Text("Tracking Streamer")
                     .font(.largeTitle)
@@ -228,6 +234,46 @@ struct ContentView: View {
             }
             .padding(.top, 32)
                 
+            VStack(spacing: 12) {
+                HStack {
+                    Text("机器人地址")
+                    TextField("192.168.124.147", text: $robotVideoHost)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .frame(width: 230)
+                }
+                Button {
+                    robotOpening = true
+                    robotOpenError = nil
+                    startServer()
+                    DataManager.shared.robotVideoRequired = true
+                    DataManager.shared.robotVideoPresentedAt = 0
+                    Task {
+                        let result = await openImmersiveSpace(id: "robotFirstPerson")
+                        robotOpening = false
+                        switch result {
+                        case .opened: dismissWindow()
+                        case .userCancelled: break
+                        case .error: robotOpenError = "未能进入第一人称，请重试。"
+                        @unknown default: robotOpenError = "未能进入第一人称，请重试。"
+                        }
+                    }
+                } label: {
+                    Label(robotOpening ? "正在进入…" : "机器人第一人称", systemImage: "vision.pro")
+                        .font(.title2.weight(.semibold))
+                        .padding(.horizontal, 28)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(robotOpening || !RobotVideoConnection.hostIsValid(robotVideoHost))
+                Text("双目实时画面 · 头手追踪 · 机器人仍由电脑按 r / s 启动")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let robotOpenError {
+                    Text(robotOpenError).foregroundStyle(.orange)
+                }
+            }
+
             // Animated data flow visualization + START button
             HStack(spacing: 10) {
                 // Video/Audio/Sim label (left side)
@@ -251,7 +297,7 @@ struct ContentView: View {
                 Button {
                     handleStartButton()
                 } label: {
-                    Text("START")
+                    Text("透视 START")
                         .font(.system(size: 36, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.vertical, 20)
@@ -405,7 +451,8 @@ struct ContentView: View {
             
         }
         .padding(32)
-        .frame(minWidth: 700, minHeight: 600)
+        }
+        .frame(width: 780, height: 700)
     }
 }
 

@@ -316,8 +316,48 @@ class DataManager: ObservableObject {
         return pythonClientIP != nil && !isPythonVersionCompatible
     }
     
-    var latestHandTrackingData: HandTrackingData = HandTrackingData()
+    var latestHandTrackingData: HandTrackingData = HandTrackingData() {
+        didSet { observeTrackingValidity() }
+    }
     @Published var pythonClientIP: String? = nil  // Store Python client's IP when it connects via gRPC
+    var robotVideoRequired = false {
+        didSet { observeTrackingValidity() }
+    }
+    var robotVideoPresentedAt: TimeInterval = 0 {
+        didSet { observeTrackingValidity() }
+    }
+    var robotVideoReason = "waiting_frame"
+    var handTrackingStreamID: UUID?
+    @Published var robotTrackingLastWriteMs = 0.0
+    @Published var robotTrackingPacketsSent: UInt64 = 0
+    private(set) var headLossSeq: UInt64 = 0
+    private(set) var leftLossSeq: UInt64 = 0
+    private(set) var rightLossSeq: UInt64 = 0
+    private(set) var headLossReason = ""
+    private var previousHeadValid = false
+    private var previousLeftValid = false
+    private var previousRightValid = false
+
+    func robotVideoReady(at now: TimeInterval) -> Bool {
+        let age = now - robotVideoPresentedAt
+        return !robotVideoRequired || (robotVideoPresentedAt > 0 && age >= 0 && age <= 0.5)
+    }
+
+    func observeTrackingValidity(at now: TimeInterval = CACurrentMediaTime()) {
+        let tracking = latestHandTrackingData
+        let videoReady = robotVideoReady(at: now)
+        let headValid = tracking.headValid && videoReady
+        if previousHeadValid && !headValid {
+            headLossSeq &+= 1
+            headLossReason = !tracking.headValid ? "head_untracked"
+                : "video_" + (robotVideoReason == "ready" ? "source_stale" : robotVideoReason)
+        }
+        if previousLeftValid && !tracking.leftValid { leftLossSeq &+= 1 }
+        if previousRightValid && !tracking.rightValid { rightLossSeq &+= 1 }
+        previousHeadValid = headValid
+        previousLeftValid = tracking.leftValid
+        previousRightValid = tracking.rightValid
+    }
     @Published var grpcServerReady: Bool = false  // Indicates if gRPC server is ready to accept connections
     @Published var webrtcServerInfo: (host: String, port: Int)? = nil  // WebRTC server info from gRPC
     @Published var webrtcGeneration: Int = 0  // Increments when new WebRTC info is received to trigger reconnects
@@ -548,19 +588,55 @@ class 🥽AppModel: ObservableObject {
 
 extension 🥽AppModel {
     
-    func run() {
+    func run() async {
 #if targetEnvironment(simulator)
         dlog("Not support handTracking in simulator.")
 #else
-        
-        Task {
-            @MainActor in
+        defer {
+            session.stop()
+            DataManager.shared.latestHandTrackingData.headValid = false
+            DataManager.shared.latestHandTrackingData.leftValid = false
+            DataManager.shared.latestHandTrackingData.rightValid = false
+        }
+        await withTaskCancellationHandler {
             do {
-                try await self.session.run([self.handTracking, self.worldTracking, self.sceneReconstruction])
-                await self.processHandUpdates()
+                try Task.checkCancellation()
+                try await session.run([handTracking, worldTracking, sceneReconstruction])
+                await processHandUpdates()
             } catch {
                 dlog("\(error)")
             }
+        } onCancel: {
+            Task { @MainActor in self.session.stop() }
+        }
+#endif
+    }
+
+    func runFirstPersonTracking(onError: @escaping @MainActor (String) -> Void) async {
+#if targetEnvironment(simulator)
+        onError("模拟器不支持头手追踪，请使用 Vision Pro")
+#else
+        defer {
+            session.stop()
+            DataManager.shared.latestHandTrackingData.headValid = false
+            DataManager.shared.latestHandTrackingData.leftValid = false
+            DataManager.shared.latestHandTrackingData.rightValid = false
+        }
+        await withTaskCancellationHandler {
+            do {
+                try Task.checkCancellation()
+                try await session.run([handTracking, worldTracking])
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask { await self.processHandUpdates() }
+                    group.addTask { await self.processDeviceAnchorUpdates() }
+                    await group.waitForAll()
+                }
+            } catch {
+                if !Task.isCancelled { onError("头手追踪无法启动：\(error.localizedDescription)") }
+                dlog("[R1 VIDEO] Tracking session failed: \(error)")
+            }
+        } onCancel: {
+            Task { @MainActor in self.session.stop() }
         }
 #endif
     }
@@ -701,7 +777,20 @@ func fill_handUpdate() -> Handtracking_HandUpdate {
     handUpdate.headTime = tracking.headTime
     handUpdate.leftTime = tracking.leftTime
     handUpdate.rightTime = tracking.rightTime
-    handUpdate.headValid = tracking.headValid
+    let manager = DataManager.shared
+    manager.observeTrackingValidity(at: handUpdate.sampleTime)
+    let videoReady = manager.robotVideoReady(at: handUpdate.sampleTime)
+    handUpdate.diagnosticsVersion = 1
+    handUpdate.headAnchorValid = tracking.headValid
+    handUpdate.videoRequired = manager.robotVideoRequired
+    handUpdate.videoReady = videoReady
+    handUpdate.videoReason = !manager.robotVideoRequired ? "not_required"
+        : (videoReady ? "ready" : (manager.robotVideoReason == "ready" ? "source_stale" : manager.robotVideoReason))
+    handUpdate.headLossSeq = manager.headLossSeq
+    handUpdate.leftLossSeq = manager.leftLossSeq
+    handUpdate.rightLossSeq = manager.rightLossSeq
+    handUpdate.headLossReason = manager.headLossReason
+    handUpdate.headValid = tracking.headValid && videoReady
     handUpdate.leftValid = tracking.leftValid
     handUpdate.rightValid = tracking.rightValid
     handUpdate.predictionSeconds = tracking.predictionSeconds

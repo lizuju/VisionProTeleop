@@ -1,0 +1,99 @@
+{
+  "schema": "r1_head_optics_v1",
+  "image_size": [
+    544,
+    448
+  ],
+  "source_calibration_sha256": "d18896fb13a8a5d7fe9430fe197e0ef6c201fcb89967dbe4f90730846579a76c",
+  "source_calibration_path": "/home/hnh/unitree_r1_dev/xr_teleoperate/assets/r1/camera_calibration.json",
+  "source_document_created": "2026-09-22",
+  "head_calibrated_at": "2026-09-20",
+  "baseline_m": 0.05909586729503002,
+  "pixel_convention": "OpenCV integer coordinates are pixel centres; normalized texture UV=(pixel+0.5)/size",
+  "rectification_rotation_convention": "raw optical ray to rectified optical ray; inverse sampling uses transpose",
+  "source_image_geometry": "production 1088x448 SBS; each eye 544x448; head_left then head_right; no further server crop/resize/rectification",
+  "left": {
+    "camera_matrix": [
+      [
+        131.59077275956216,
+        0.0,
+        287.47891790220876
+      ],
+      [
+        0.0,
+        130.56138382333265,
+        214.51650864149352
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "distortion_coefficients": [
+      0.24853825742990737,
+      0.3493581787778408,
+      0.0,
+      0.0
+    ],
+    "rectification_rotation": [
+      [
+        0.9999437452865394,
+        -0.0008127668603324089,
+        0.010575711435123893
+      ],
+      [
+        0.0007935838457588302,
+        0.9999980326489634,
+        0.0018179446863354823
+      ],
+      [
+        -0.010577168194182012,
+        -0.0018094497046257424,
+        0.9999424230448263
+      ]
+    ]
+  },
+  "right": {
+    "camera_matrix": [
+      [
+        131.90623141817346,
+        0.0,
+        286.6888500027994
+      ],
+      [
+        0.0,
+        131.06505181678398,
+        215.0569562550653
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "distortion_coefficients": [
+      0.24794721041618614,
+      0.34622909807519897,
+      0.0,
+      0.0
+    ],
+    "rectification_rotation": [
+      [
+        0.9998904634915761,
+        0.001627056679407299,
+        -0.014711006259359397
+      ],
+      [
+        -0.0016537364198087867,
+        0.9999970096784064,
+        -0.0018016076428535505
+      ],
+      [
+        0.01470803095097074,
+        0.001825738427865942,
+        0.9998901642204199
+      ]
+    ]
+  }
+}

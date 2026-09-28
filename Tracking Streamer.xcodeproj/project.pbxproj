@@ -69,6 +69,14 @@
 		C1EAFAB72EE0C33100549580 /* ExtrinsicCalibrationView_New.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EAFAB62EE0C33100549580 /* ExtrinsicCalibrationView_New.swift */; };
 		C1EAFABB2EE0CB1700549580 /* MultipeerCalibrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EAFABA2EE0CB1700549580 /* MultipeerCalibrationManager.swift */; };
 		C1EAFABF2EE11B5D00549580 /* CameraCalibrationWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EAFABE2EE11B5D00549580 /* CameraCalibrationWizardView.swift */; };
+		D9713679E9274BC58F8FF426 /* RobotFirstPersonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3428D8CBF7FF448D972A387A /* RobotFirstPersonView.swift */; };
+		D7452A77ABF1415EBAED636C /* RobotVideoConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDF9D8DF1E049719E40C1CA /* RobotVideoConnection.swift */; };
+		CB47FCEF84CE490F85861400 /* RobotVideoRootCA.der in Resources */ = {isa = PBXBuildFile; fileRef = 452FC3B74C6344269A88701D /* RobotVideoRootCA.der */; };
+		2B6EB7B04D5649FBBDCE49AB /* RobotOperatorStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2528169C8C34875B87F70EB /* RobotOperatorStatus.swift */; };
+		05E4035536E74EBA9D7A362E /* RobotVideoTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1C4821975442248B0148A9 /* RobotVideoTiming.swift */; };
+		D0C61B1CF9AF49F881D1B56D /* RobotVideoOptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8003642CCAD6423DA4408B72 /* RobotVideoOptics.swift */; };
+		83452D5A0E3C4C15BEE8F9BC /* RobotVideoOptics.metal in Sources */ = {isa = PBXBuildFile; fileRef = 58DDD9D4DBB14AF1A86A1CC5 /* RobotVideoOptics.metal */; };
+		9CEEF4D00E044A41A93B97D1 /* head-optics.json in Resources */ = {isa = PBXBuildFile; fileRef = 09A9A077EC8146029AEDD487 /* head-optics.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -152,6 +160,14 @@
 		C1EAFAB62EE0C33100549580 /* ExtrinsicCalibrationView_New.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtrinsicCalibrationView_New.swift; sourceTree = "<group>"; };
 		C1EAFABA2EE0CB1700549580 /* MultipeerCalibrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultipeerCalibrationManager.swift; sourceTree = "<group>"; };
 		C1EAFABE2EE11B5D00549580 /* CameraCalibrationWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCalibrationWizardView.swift; sourceTree = "<group>"; };
+		3428D8CBF7FF448D972A387A /* RobotFirstPersonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotFirstPersonView.swift; sourceTree = "<group>"; };
+		1DDF9D8DF1E049719E40C1CA /* RobotVideoConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotVideoConnection.swift; sourceTree = "<group>"; };
+		452FC3B74C6344269A88701D /* RobotVideoRootCA.der */ = {isa = PBXFileReference; lastKnownFileType = file; path = RobotVideoRootCA.der; sourceTree = "<group>"; };
+		B2528169C8C34875B87F70EB /* RobotOperatorStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotOperatorStatus.swift; sourceTree = "<group>"; };
+		EA1C4821975442248B0148A9 /* RobotVideoTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobotVideoTiming.swift; sourceTree = "<group>"; };
+		8003642CCAD6423DA4408B72 /* RobotVideoOptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RobotVideoOptics.swift"; sourceTree = "<group>"; };
+		58DDD9D4DBB14AF1A86A1CC5 /* RobotVideoOptics.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = "RobotVideoOptics.metal"; sourceTree = "<group>"; };
+		09A9A077EC8146029AEDD487 /* head-optics.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "head-optics.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -255,6 +271,14 @@
 				C1C767302EF220010020844F /* SignalingClient.swift */,
 				C1E05F7A2ECD850B0018C506 /* ImmersiveView.swift */,
 				C1E05F7B2ECD850B0018C506 /* WebRTCClient.swift */,
+				452FC3B74C6344269A88701D /* RobotVideoRootCA.der */,
+				1DDF9D8DF1E049719E40C1CA /* RobotVideoConnection.swift */,
+				EA1C4821975442248B0148A9 /* RobotVideoTiming.swift */,
+				09A9A077EC8146029AEDD487 /* head-optics.json */,
+				58DDD9D4DBB14AF1A86A1CC5 /* RobotVideoOptics.metal */,
+				8003642CCAD6423DA4408B72 /* RobotVideoOptics.swift */,
+				B2528169C8C34875B87F70EB /* RobotOperatorStatus.swift */,
+				3428D8CBF7FF448D972A387A /* RobotFirstPersonView.swift */,
 				C1EAF97E2EDBB9C700549580 /* RecordingManager.swift */,
 				C1EAFA822EDF476A00549580 /* CloudStorageProvider.swift */,
 				C1EAFABA2EE0CB1700549580 /* MultipeerCalibrationManager.swift */,
@@ -444,6 +468,8 @@
 				16EA6A632B68629200A3A740 /* screenshot1280w2.jpg in Resources */,
 				16267B502B57D172000CA8AD /* Localizable.xcstrings in Resources */,
 				165ADB532B4B71B2008A756F /* Assets.xcassets in Resources */,
+				CB47FCEF84CE490F85861400 /* RobotVideoRootCA.der in Resources */,
+				9CEEF4D00E044A41A93B97D1 /* head-optics.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -500,6 +526,12 @@
 				C14B98BC2EECB747000B78D8 /* CalibrationDebugRecorder.swift in Sources */,
 				C1EAF9752ED7E66600549580 /* mujoco_ar.grpc.swift in Sources */,
 				C1E05F7E2ECD850B0018C506 /* WebRTCClient.swift in Sources */,
+				D7452A77ABF1415EBAED636C /* RobotVideoConnection.swift in Sources */,
+				05E4035536E74EBA9D7A362E /* RobotVideoTiming.swift in Sources */,
+				83452D5A0E3C4C15BEE8F9BC /* RobotVideoOptics.metal in Sources */,
+				D0C61B1CF9AF49F881D1B56D /* RobotVideoOptics.swift in Sources */,
+				2B6EB7B04D5649FBBDCE49AB /* RobotOperatorStatus.swift in Sources */,
+				D9713679E9274BC58F8FF426 /* RobotFirstPersonView.swift in Sources */,
 				C1893C762B93C1AC00F2269D /* handtracking.grpc.swift in Sources */,
 				C1893C772B93C1AC00F2269D /* handtracking.pb.swift in Sources */,
 				16C95AE32B5E75D800CF0FED /* 🛠️Panel.swift in Sources */,
@@ -654,7 +686,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = SRVJVMZ2WS;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Supporting files/Info.plist";
@@ -671,7 +703,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.51;
-				PRODUCT_BUNDLE_IDENTIFIER = local.r1.TrackingStreamer.srvjvmz2ws;
+				PRODUCT_BUNDLE_IDENTIFIER = local.r1.TrackingStreamer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "xros xrsimulator";
@@ -694,7 +726,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = SRVJVMZ2WS;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Supporting files/Info.plist";
@@ -711,7 +743,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.51;
-				PRODUCT_BUNDLE_IDENTIFIER = local.r1.TrackingStreamer.srvjvmz2ws;
+				PRODUCT_BUNDLE_IDENTIFIER = local.r1.TrackingStreamer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "xros xrsimulator";
@@ -731,7 +763,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Tracking Viewer/Tracking Viewer.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = SRVJVMZ2WS;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Tracking Viewer/Tracking-Viewer-Info.plist";
@@ -775,7 +807,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Tracking Viewer/Tracking Viewer.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = SRVJVMZ2WS;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Tracking Viewer/Tracking-Viewer-Info.plist";

@@ -1,0 +1,151 @@
+#usda 1.0
+(
+ defaultPrim = "Root"
+ metersPerUnit = 1
+ upAxis = "Y"
+)
+def Xform "Root" {
+    def Material "StereoMaterial" {
+        asset inputs:left
+        asset inputs:right
+        float inputs:tanHalfHorizontalFov = 1
+        float inputs:imageAspect = 1.2142857
+        token outputs:mtlx:surface.connect = </Root/StereoMaterial/Surface.outputs:out>
+        def Shader "View" {
+            uniform token info:id = "ND_realitykit_viewdirection_vector3"
+            string inputs:space = "model"
+            float3 outputs:out
+        }
+        def Shader "Axes" {
+            uniform token info:id = "ND_separate3_vector3"
+            float3 inputs:in.connect = </Root/StereoMaterial/View.outputs:out>
+            float outputs:outx
+            float outputs:outy
+            float outputs:outz
+        }
+        def Shader "Diameter" {
+            uniform token info:id = "ND_multiply_float"
+            float inputs:in1.connect = </Root/StereoMaterial.inputs:tanHalfHorizontalFov>
+            float inputs:in2 = 2
+            float outputs:out
+        }
+        def Shader "DepthScale" {
+            uniform token info:id = "ND_multiply_float"
+            float inputs:in1.connect = </Root/StereoMaterial/Axes.outputs:outy>
+            float inputs:in2.connect = </Root/StereoMaterial/Diameter.outputs:out>
+            float outputs:out
+        }
+        def Shader "Horizontal" {
+            uniform token info:id = "ND_divide_float"
+            float inputs:in1.connect = </Root/StereoMaterial/Axes.outputs:outx>
+            float inputs:in2.connect = </Root/StereoMaterial/DepthScale.outputs:out>
+            float outputs:out
+        }
+        def Shader "VerticalAspect" {
+            uniform token info:id = "ND_multiply_float"
+            float inputs:in1.connect = </Root/StereoMaterial/Axes.outputs:outz>
+            float inputs:in2.connect = </Root/StereoMaterial.inputs:imageAspect>
+            float outputs:out
+        }
+        def Shader "Vertical" {
+            uniform token info:id = "ND_divide_float"
+            float inputs:in1.connect = </Root/StereoMaterial/VerticalAspect.outputs:out>
+            float inputs:in2.connect = </Root/StereoMaterial/DepthScale.outputs:out>
+            float outputs:out
+        }
+        def Shader "U" {
+            uniform token info:id = "ND_subtract_float"
+            float inputs:in1 = 0.5
+            float inputs:in2.connect = </Root/StereoMaterial/Horizontal.outputs:out>
+            float outputs:out
+        }
+        def Shader "V" {
+            uniform token info:id = "ND_add_float"
+            float inputs:in1 = 0.5
+            float inputs:in2.connect = </Root/StereoMaterial/Vertical.outputs:out>
+            float outputs:out
+        }
+        def Shader "UV" {
+            uniform token info:id = "ND_combine2_vector2"
+            float inputs:in1.connect = </Root/StereoMaterial/U.outputs:out>
+            float inputs:in2.connect = </Root/StereoMaterial/V.outputs:out>
+            float2 outputs:out
+        }
+        def Shader "Left" {
+            uniform token info:id = "ND_image_color3"
+            asset inputs:file.connect = </Root/StereoMaterial.inputs:left>
+            float2 inputs:texcoord.connect = </Root/StereoMaterial/UV.outputs:out>
+            string inputs:filtertype = "linear"
+            string inputs:uaddressmode = "constant"
+            string inputs:vaddressmode = "constant"
+            color3f inputs:default = (0,0,0)
+            color3f outputs:out
+        }
+        def Shader "Right" {
+            uniform token info:id = "ND_image_color3"
+            asset inputs:file.connect = </Root/StereoMaterial.inputs:right>
+            float2 inputs:texcoord.connect = </Root/StereoMaterial/UV.outputs:out>
+            string inputs:filtertype = "linear"
+            string inputs:uaddressmode = "constant"
+            string inputs:vaddressmode = "constant"
+            color3f inputs:default = (0,0,0)
+            color3f outputs:out
+        }
+        def Shader "Eye" {
+            uniform token info:id = "ND_realitykit_geometry_switch_cameraindex_color3"
+            color3f inputs:left.connect = </Root/StereoMaterial/Left.outputs:out>
+            color3f inputs:mono.connect = </Root/StereoMaterial/Left.outputs:out>
+            color3f inputs:right.connect = </Root/StereoMaterial/Right.outputs:out>
+            color3f outputs:out
+        }
+        def Shader "ULower" {
+            uniform token info:id = "ND_ifgreater_color3"
+            float inputs:value1.connect = </Root/StereoMaterial/U.outputs:out>
+            float inputs:value2 = 0
+            color3f inputs:in1.connect = </Root/StereoMaterial/Eye.outputs:out>
+            color3f inputs:in2 = (0,0,0)
+            color3f outputs:out
+        }
+        def Shader "UUpper" {
+            uniform token info:id = "ND_ifgreater_color3"
+            float inputs:value1 = 1
+            float inputs:value2.connect = </Root/StereoMaterial/U.outputs:out>
+            color3f inputs:in1.connect = </Root/StereoMaterial/ULower.outputs:out>
+            color3f inputs:in2 = (0,0,0)
+            color3f outputs:out
+        }
+        def Shader "VLower" {
+            uniform token info:id = "ND_ifgreater_color3"
+            float inputs:value1.connect = </Root/StereoMaterial/V.outputs:out>
+            float inputs:value2 = 0
+            color3f inputs:in1.connect = </Root/StereoMaterial/UUpper.outputs:out>
+            color3f inputs:in2 = (0,0,0)
+            color3f outputs:out
+        }
+        def Shader "VUpper" {
+            uniform token info:id = "ND_ifgreater_color3"
+            float inputs:value1 = 1
+            float inputs:value2.connect = </Root/StereoMaterial/V.outputs:out>
+            color3f inputs:in1.connect = </Root/StereoMaterial/VLower.outputs:out>
+            color3f inputs:in2 = (0,0,0)
+            color3f outputs:out
+        }
+        def Shader "Front" {
+            uniform token info:id = "ND_ifgreater_color3"
+            float inputs:value1.connect = </Root/StereoMaterial/Axes.outputs:outy>
+            float inputs:value2 = 0.0001
+            color3f inputs:in1.connect = </Root/StereoMaterial/VUpper.outputs:out>
+            color3f inputs:in2 = (0,0,0)
+            color3f outputs:out
+        }
+        def Shader "Surface" {
+            uniform token info:id = "ND_UsdPreviewSurface_surfaceshader"
+            color3f inputs:diffuseColor = (0,0,0)
+            color3f inputs:emissiveColor.connect = </Root/StereoMaterial/Front.outputs:out>
+            float inputs:metallic = 0
+            float inputs:opacity = 1
+            float inputs:roughness = 1
+            token outputs:out
+        }
+    }
+}

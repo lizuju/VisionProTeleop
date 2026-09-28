@@ -381,7 +381,7 @@ struct ImmersiveView: View {
             dlog("DEBUG: onReceive triggered, new image: \(newImage != nil)")
             updateTrigger.toggle()
         }
-        .task { appModel.run() }
+        .task { await appModel.run() }
         .task { await appModel.processDeviceAnchorUpdates() }
         .task(priority: .low) { await appModel.processReconstructionUpdates() }
         .onAppear {

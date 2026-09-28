@@ -1,45 +1,97 @@
-# R1 Tracking Streamer
+# R1 Tracking Streamer：原生透视与机器人第一人称
 
-本仓库是 Improbable-AI/VisionProTeleop 的 R1 原生输入分支，基于上游提交 `4c549905c2a8b214d79f7cd88e535101a1ce32af`，保留 MIT 许可证。
+本分支在 [Improbable-AI/VisionProTeleop](https://github.com/Improbable-AI/VisionProTeleop) 的 `4c549905c2a8b214d79f7cd88e535101a1ce32af` 基础上，接入 R1 头手追踪和机器人双目视频。上游 MIT 许可证保留在 [LICENSE](LICENSE)。机器人端配套代码在 [lizuju/xr_teleoperate](https://github.com/lizuju/xr_teleoperate) 和 [lizuju/teleimager](https://github.com/lizuju/teleimager)。
 
-配套机器人端：https://github.com/lizuju/xr_teleoperate 。两端使用 `production-20260924` 标签。
+支持两种原生入口：
 
-## 本分支改动
+- **Start**：进入透视空间，看真实房间，向 Ubuntu 发送头手输入。
+- **机器人第一人称**：显示机器人双目视频，同时发送相同头手输入；状态栏显示跟随、暂停原因和采集状态。
 
-- 在 mixed 透视空间采集头部和双手，默认预测偏移为 0 ms。
-- 协议 v1 携带实际锚点采样时间和每侧追踪有效性；失追后不会用缓存姿态冒充新数据。
-- 姿态服务只有绑定端口成功后才显示就绪；重复 Start 不会重复创建监听。进入后台停止服务，回到前台或再次 Start 时恢复。
-- 发送只保留最新待发送姿态，取消长连接后释放端口，支持停止后重新启动。
-- 移除上游作者的 iCloud、共享钥匙串权限与云登录引导，使用 R1 独立应用标识。
-- 锁定 swift-async-algorithms 1.1.2，适配 Xcode 27 的并发检查。
+原生输入沿用机器人端现有坐标转换、手指映射和 IK。Safari 仍使用原有网页和启动脚本，每次只运行一个控制模式。
 
-## 编译与安装
+## 在 Vision Pro 安装
 
-1. 用 Xcode 27 打开根目录 `Tracking Streamer.xcodeproj`，选择 `VisionProTeleop` scheme。
-2. 在 Signing & Capabilities 选择自己的 Team，并按需修改 Bundle Identifier。仓库中的 Team 和应用标识是当前部署配置；不包含签名证书或私钥。
-3. 在 Device Hub 配对自己的 Vision Pro，启用开发者模式，选择真实设备后编译安装。个人账号签名到期后需重新编译安装。
-4. 在头显打开 **R1 Tracking Streamer**，允许手部追踪、世界感知和本地网络；点击 Start，保持双手可见。
-5. 确认设置中的 Hand Tracking → Prediction Offset 为 **0 ms**，记录 App 显示的 IP。
+本版本实际构建和真机验证环境为 **Xcode 27 / visionOS 27**。工程的较低 deployment target 不代表旧版本系统已验证。
 
-## 配套 Ubuntu 接收端
-
-在 `xr_teleoperate` 的对应版本中按 `outputs/VisionProTeleop透视接入.md` 安装独立接收环境。先只验证输入：
-
-```bash
-../.venv-xr/bin/python tools/check_visionpro_input.py 头显IP --seconds 10
+```sh
+git clone https://github.com/lizuju/VisionProTeleop.git
+cd VisionProTeleop
+open 'Tracking Streamer.xcodeproj'
 ```
 
-检查通过后，由操作者启动其中一种模式：
+需要复现特定发布时，先 checkout 相应 tag。保留项目的 `Package.resolved`，不要在安装时无意升级依赖。
 
-```bash
-./teleop/run_r1_a7_visionpro.sh 头显IP
-./teleop/run_r1_a7_visionpro_capture.sh 头显IP 这次测试名 "这次测试目标"
+1. Scheme 选 **VisionProTeleop**，Target 为 **Tracking Streamer**。显示名是 **R1 Tracking Streamer**。
+2. 在 Xcode 登录自己的 Apple ID，在 Signing & Capabilities 选择自己的 Team，并设置唯一 Bundle Identifier。仓库的 Team 留空、默认 Bundle ID 为 `local.r1.TrackingStreamer`。签名证书与 provisioning profile 由自己的 Xcode 管理；无需拷贝其他人的证书。
+3. Mac 和 Vision Pro 连接可互通的局域网，开启 Wi-Fi / 蓝牙。在头显“设置 → 通用 → 远程设备”保持可发现；Xcode 27 的 **Device Hub → ＋ → Pair Nearby Device…** 配对，按提示启用开发者模式。无线安装不需要 Developer Strap，配对两端不要求同一个 Apple ID。
+4. 选择自己的 Vision Pro，保持佩戴解锁，Build & Run。首次安装按系统提示信任开发者。个人签名到期后用自己的 Xcode 重新签名安装。
+5. 允许手部追踪、世界感知和本地网络。Hand Tracking → Prediction Offset 保持 **0 ms**。
+
+未经本分支修改的 App Store 客户端不提供 R1 要求的有效性协议，不能替代本版本开启机器人跟随。
+
+## 第一人称所需服务
+
+App 内第一人称地址填写 **Ubuntu 视频网关的 IP / 主机名**，不带协议和端口。默认 `192.168.124.147` 是现有部署示例，其他部署应填写自己的地址。遥操脚本中的 IP 则是 **Vision Pro 的 IP**，二者不要混用。
+
+| 链路 | 所需能力 |
+| --- | --- |
+| Ubuntu → Vision Pro | gRPC TCP 12345，接收 protocol v1 头手姿态 |
+| Vision Pro → Ubuntu | HTTPS 60001 `/offer` 视频协商、`/r1/status` 遥操/采集状态 |
+| PC2 / Ubuntu → Vision Pro | WebRTC H.264 视频和 `r1-video-meta-v1` 时间信息通道，局域网 UDP 可达 |
+
+网关与相机端需要配套的 R1 原生视频/时间信息实现；仅运行上游普通 `avp_stream` 视频示例不能代替它。部署服务的命令、状态文件和配置以机器人端仓库说明为准。
+
+第一人称目前使用固定 **1088×448 左右并排画面**，每眼 **544×448**，顺序为 head_left、head_right，视频源固定 **10 FPS**。本客户端不插帧，也不改变共享相机源的帧率。
+
+### HTTPS 证书与相机校准
+
+`Tracking Streamer/RobotVideoRootCA.der` 是当前部署的**公开 CA 证书**，不是私钥；有效期至 **2027-08-25 UTC**。其 SHA-256 为 `6e6f49cbb31815a2d02a4d82fa02b9633599193274163bcb07480d9861e64c5a`。换用自己的网关时，以自己的公开 CA 替换同名资源并重新构建；网关证书 SAN 必须匹配 App 填写的主机名或 IP。客户端仍检查证书有效期和主机名。不要提交 CA 私钥或服务器私钥。
+
+`Tracking Streamer/head-optics.json` 是当前机器人头部相机的实际标定，双目基线约 **59.1 mm**。App 在 GPU 上去畸变和双目校正；这份标定不代表所有 R1 都通用。更换相机、裁剪、分辨率或光学安装后，应使用对应实际标定，不能只改数值让画面通过。文件的 `source_calibration_path` 仅记录来源，运行时不读取该机器路径。
+
+左右相机顺序固定。取景范围支持 **60–120°**，可在「…」选 **宽视野 110°**；超过 90° 的源内容映射到 90° 显示范围，以更多桌面/双手内容换取较小的物体比例。调整视角会暂时撤销视频有效性，跟随中调整后需要重新按 r/s 对齐。
+
+## 先只读检查，再启动遥操
+
+佩戴头显，进入 Start 或机器人第一人称，双手放在视野内。在 Ubuntu 的 `xr_teleoperate` 目录运行（替换 IP）：
+
+```sh
+../.venv-xr/bin/python tools/check_visionpro_input.py VISION_PRO_IP --seconds 10
 ```
 
-按 `r` 跟随，`s` 开始采集，`y/n/x` 分别保存为成功、失败、丢弃；`p` 暂停，`q` 退出。头部丢失或网络超时后需按 `r/s` 重新对齐再跟随；单手失追时该侧保持。原生模式暂不显示机器人相机小窗和力矩 HUD，相机数采不受影响。
+该工具只接收输入，不创建机器人命令发布器。确认头手有效、失追后相应侧失效、恢复后收到新源数据。第一人称还要确认画面正立、双眼舒适及源画面时间有效。
 
-Ubuntu 接收端要求协议 v1，不能用未经修改的 App Store 客户端代替本分支。机器人端使用自己的协议接收器；上游 `avp_stream` Python 包的使用方式不属于本次接入。
+随后由操作者启动其中一个：
 
-## 已有验证
+```sh
+# 原生遥操
+./teleop/run_r1_a7_visionpro.sh VISION_PRO_IP
 
-本版本原生源码已通过 visionOS 27 编译、签名及安装，完成五种 gRPC 生命周期场景和真实头显锁屏/唤醒恢复测试。实际机器人运动应由操作者验证；这些验证不代表无线网络不会断流。
+# 或：原生遥操并逐条采集
+./teleop/run_r1_a7_visionpro_capture.sh VISION_PRO_IP 这次测试名 "这次测试目标"
+```
+
+采集脚本已经包含遥操。按 `r` 跟随/重新对齐，`p` 暂停保持，`s` 开始一条，`y/n/x` 结束并标注成功/失败/丢弃；`x` 保留文件。结束一条后可继续按 `s`，无需重启。`q` 退出。
+
+旧 Safari 模式仍用 `./teleop/run_r1_a7_vector.sh` 或 `./teleop/run_r1_a7_capture.sh`。
+
+## 输入有效性、暂停与诊断
+
+- `tracking_protocol_version=1`：字段 4–12 提供源端单调时钟采样、ARKit anchor 时间及每侧有效性；重复包不会把旧 anchor 盖成新数据。
+- `diagnostics_version=1`：新增字段 13–23，分开报告原始头部追踪、视频门禁、保留的源失效次数及原因、上一包本机提交等待、当前 RPC 姿态包序号。协议定义见 `avp_stream/grpc_msg/handtracking.proto`。
+- 发送端只在源状态变化时提交姿态，最高120Hz；没有变化时保留100ms心跳。每次等待写入完成后重新取最新源状态，保留期间出现过的短失效事件。
+- 「…」显示已发姿态包数和本机提交等待。提交等待不是网络 RTT、送达确认或机器人响应延迟。
+- 真实手/头数据过期、断线或第一人称视频过期仍触发保持。头部或整体输入失效后，输入恢复且双手稳定，再由操作者按 `r/s` 重新对齐。单手失追沿用原来的单侧保持逻辑。
+- 第一人称状态栏区分接收超时、姿态过期、头部失追、视频断连/过期、时间同步、取景调整和显示错误；整体保持原因保留到成功重新对齐。
+
+当前500ms视频门禁和机器人端250ms输入保护没有放宽。gRPC/TCP已经接受的字节不能由本应用撤回，软件优化不能消除无线断流。最近一分钟只读验证仍出现超过250ms的接收间隔，不能把本版本理解为“无线暂停已彻底解决”。
+
+机器人端采集、质量报告与训练导出继续使用原有流程；IMU 不作为有效训练输入。
+
+## 验证与开发
+
+本次发布源码已通过 visionOS 全量编译。生产代码抽取的发送回归29项、显示回归74项、状态DTO10项通过；Ubuntu配套回归132项通过。真实头显验证收到新诊断版本的数据；验证没有启动机器人运动。
+
+可在 Mac 重新运行仓库内发送回归，方法见 [tests/native_sender/README.md](tests/native_sender/README.md)。它覆盖慢写、最新姿态、短失效、心跳和重连隔离，不代表无线或机器人运动验收。
+
+Swift protobuf生成文件随仓库保存。修改 `.proto` 后用与锁文件对应的 SwiftProtobuf 1.33.3 `protoc-gen-swift` 生成 `Visibility=Public` 的 `handtracking.pb.swift`，同步到 `Tracking Streamer/Proto/` 和 `avp_stream/grpc_msg/`。Python 接收协议另在机器人端仓库生成。

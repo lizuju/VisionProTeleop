@@ -2634,7 +2634,7 @@ private struct LifecycleModifiers: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .task { appModel.run() }
+            .task { await appModel.run() }
             .task { await appModel.processDeviceAnchorUpdates() }
             .task(priority: .low) { await appModel.processReconstructionUpdates() }
             .onAppear { handleOnAppear() }

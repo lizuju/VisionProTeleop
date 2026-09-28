@@ -7,7 +7,7 @@ struct VisionProTeleopApp: App {
     @StateObject private var appModel = 🥽AppModel()
     
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
         }
         .windowResizability(.contentSize)
@@ -38,6 +38,11 @@ struct VisionProTeleopApp: App {
             MuJoCoStreamingView()
         }
         
+        ImmersiveSpace(id: "robotFirstPerson") {
+            RobotFirstPersonView()
+        }
+        .immersionStyle(selection: .constant(.full), in: .full)
+
         // Combined streaming view (Video + Audio + MuJoCo Sim)
         ImmersiveSpace(id: "combinedStreamSpace") {
             CombinedStreamingView()
