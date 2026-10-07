@@ -28,8 +28,8 @@ final class RobotStereoDisplay: ObservableObject {
     private var metricsAt: TimeInterval = 0
     private var frames = 0
     private var statsStarted = CACurrentMediaTime()
-    private var fov: Float = 110
-    private var presentedFOV: Float = 110
+    private var fov: Float = 120
+    private var presentedFOV: Float = 120
 
     init() {
         screen.position = [0, 0, -2]
@@ -66,8 +66,8 @@ final class RobotStereoDisplay: ObservableObject {
 
     private func setPresentedFOV(_ value: Float) throws {
         guard var material else { return }
-        // Fit wider camera views inside 90 degrees so the extra content stays visible.
-        try material.setParameter(name: "tanHalfHorizontalFov", value: .float(tan(min(value, 90) * .pi / 360)))
+        // Fit the camera view inside 80 degrees so its edges are easier to see.
+        try material.setParameter(name: "tanHalfHorizontalFov", value: .float(tan(min(value, 80) * .pi / 360)))
         try material.setParameter(name: "imageAspect", value: .float(Float(dimensions.x) / Float(dimensions.y)))
         self.material = material
         screen.model?.materials = [material]
@@ -85,13 +85,13 @@ final class RobotStereoDisplay: ObservableObject {
         let rightResource: TextureResource = try TextureResource(from: right)
         try material.setParameter(name: "left", value: .textureResource(leftResource))
         try material.setParameter(name: "right", value: .textureResource(rightResource))
-        try material.setParameter(name: "tanHalfHorizontalFov", value: .float(tan(min(fov, 90) * .pi / 360)))
+        try material.setParameter(name: "tanHalfHorizontalFov", value: .float(tan(min(fov, 80) * .pi / 360)))
         try material.setParameter(name: "imageAspect", value: .float(Float(width) / Float(height)))
         self.material = material
         textures = [left, right]
         dimensions = [width, height]
         // The shader uses each eye's viewing ray; this plane only bounds the draw area.
-        let coverageWidth: Float = 4 * tan(90 * .pi / 360) + 0.2
+        let coverageWidth: Float = 4 * tan(80 * .pi / 360) + 0.2
         let coverageHeight = coverageWidth * Float(height) / Float(width) + 0.2
         screen.model = ModelComponent(mesh: .generatePlane(width: coverageWidth, depth: coverageHeight), materials: [material])
         presentedFOV = fov
@@ -229,7 +229,7 @@ struct RobotFirstPersonView: View {
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Environment(\.openWindow) private var openWindow
     @AppStorage("r1VideoHost") private var host = "192.168.124.147"
-    @AppStorage("r1VideoFOV") private var fieldOfView = 110.0
+    @AppStorage("r1VideoFOV") private var fieldOfView = 120.0
     @StateObject private var connection = RobotVideoConnection()
     @StateObject private var display = RobotStereoDisplay()
     @StateObject private var operatorStatus = RobotOperatorStatus()
@@ -262,7 +262,7 @@ struct RobotFirstPersonView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "video.slash").font(.largeTitle)
                         Text(trackingError ?? display.unavailableMessage).font(.title2.weight(.semibold))
-                        Text("等待实时双目画面；恢复后在电脑按 r / s 重新对齐")
+                        Text("等待画面与双手输入恢复稳定后自动对齐；首次启动按 r，手动暂停后按 r / s")
                             .font(.callout).foregroundStyle(.secondary)
                         Button("返回") { leave() }.disabled(exiting)
                     }
@@ -371,7 +371,7 @@ struct RobotFirstPersonView: View {
                 if let status = operatorStatus.snapshot, status.motion == "tracking_hold" {
                     Text("暂停原因：\(status.holdLabel)").foregroundStyle(.orange)
                     if !["left_hand_lost", "right_hand_lost", "both_hands_lost"].contains(status.hold_reason ?? "") {
-                        Text("输入恢复后，双手保持稳定，在电脑按 r / s 重新对齐")
+                        Text("画面和双手输入恢复稳定后，自动对齐并继续跟随；手动暂停仍需按 r / s")
                             .font(.caption2).foregroundStyle(.secondary)
                     }
                 }
@@ -380,12 +380,12 @@ struct RobotFirstPersonView: View {
                     Slider(value: $fieldOfView, in: 60...120, step: 5).frame(width: 160)
                     Text("\(Int(fieldOfView))°").monospacedDigit()
                 }
-                Button("宽视野 110°") { fieldOfView = 110 }
-                Text("90°以上自动缩放入画；范围越大，物体越小")
+                Button("最大取景 120°") { fieldOfView = 120 }
+                Text("画面缩小以便看全四周；取景越大，物体越小")
                     .font(.caption2).foregroundStyle(.secondary)
                 Text("镜头去畸变 · 双目对齐")
                     .font(.caption2).foregroundStyle(.secondary)
-                Text("调整视角会暂停跟随，调好后在电脑按 r / s 恢复")
+                Text("调整视角会暂时保持姿态；画面和双手输入恢复稳定后自动对齐继续")
                     .font(.caption2).foregroundStyle(.secondary)
                 Text("距离感仍受相机间距与瞳距差异影响")
                     .font(.caption2).foregroundStyle(.secondary)
