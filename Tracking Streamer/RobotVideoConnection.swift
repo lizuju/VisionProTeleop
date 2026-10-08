@@ -16,6 +16,58 @@ struct RobotVideoFrame {
     let timing: RobotVideoTiming
 }
 
+struct RobotVideoReconnectBackoff {
+    private struct FreshPeriod {
+        let epoch: String
+        let startedAt: TimeInterval
+        let sourceStartedAt: TimeInterval
+        var sequence: UInt64
+        var sourceAt: TimeInterval
+        var advancedAt: TimeInterval
+    }
+
+    private(set) var consecutiveFailures = 0
+    private var freshPeriod: FreshPeriod?
+
+    mutating func failed() -> TimeInterval {
+        consecutiveFailures += 1
+        freshPeriod = nil
+        return min(Double(consecutiveFailures), 5)
+    }
+
+    mutating func observe(_ timing: RobotVideoTiming?, at now: TimeInterval) {
+        guard consecutiveFailures > 0 else { return }
+        guard let timing, timing.isFresh(at: now), timing.sourceMappedAt <= now else {
+            freshPeriod = nil
+            return
+        }
+        if var period = freshPeriod, period.epoch == timing.sourceEpoch {
+            // Re-reading one fresh snapshot does not establish recovery.
+            if timing.sourceSequence == period.sequence, timing.sourceMappedAt == period.sourceAt,
+               now - period.advancedAt <= 0.5 { return }
+            guard timing.sourceSequence > period.sequence, timing.sourceMappedAt > period.sourceAt else {
+                freshPeriod = nil
+                return
+            }
+            if now - period.advancedAt <= 0.5, timing.sourceMappedAt - period.sourceAt <= 0.5 {
+                period.sequence = timing.sourceSequence
+                period.sourceAt = timing.sourceMappedAt
+                period.advancedAt = now
+                if now - period.startedAt >= 2, timing.sourceMappedAt - period.sourceStartedAt >= 2 {
+                    consecutiveFailures = 0
+                    freshPeriod = nil
+                } else {
+                    freshPeriod = period
+                }
+                return
+            }
+        }
+        freshPeriod = FreshPeriod(epoch: timing.sourceEpoch, startedAt: now,
+                                  sourceStartedAt: timing.sourceMappedAt, sequence: timing.sourceSequence,
+                                  sourceAt: timing.sourceMappedAt, advancedAt: now)
+    }
+}
+
 @MainActor
 final class RobotVideoConnection: ObservableObject {
     static let freshThreshold: TimeInterval = 0.5
@@ -123,6 +175,7 @@ final class RobotVideoConnection: ObservableObject {
     }
 
     private func run(host: String, rootCA: SecCertificate, generation expected: UInt64) async {
+        var reconnectBackoff = RobotVideoReconnectBackoff()
         while !Task.isCancelled, generation == expected {
             do {
                 status = reconnectCount == 0 ? "正在连接机器人视频…" : "正在重新连接机器人视频…"
@@ -146,6 +199,7 @@ final class RobotVideoConnection: ObservableObject {
                     frameWidth = snapshot.width
                     frameHeight = snapshot.height
                     if let failure = snapshot.failure { throw RobotVideoError.message(failure) }
+                    reconnectBackoff.observe(snapshot.timing, at: now)
                     status = isFresh ? "机器人视频已连接" : (snapshot.decodedAt == nil ? "已连接，等待机器人画面…" : "机器人视频暂未更新")
                     if now - measuredAt >= 1 {
                         decodedFPS = Double(snapshot.decodedFrames - measuredFrames) / (now - measuredAt)
@@ -167,10 +221,11 @@ final class RobotVideoConnection: ObservableObject {
                 closeConnection()
                 decodedFPS = 0
                 status = "\(error.localizedDescription)，正在重连…"
-                print("[R1Video] reconnect reason=\(error.localizedDescription)")
                 reconnectCount += 1
+                let retryDelay = reconnectBackoff.failed()
+                print("[R1Video] reconnect reason=\(error.localizedDescription) retry_delay_s=\(retryDelay) consecutive_failures=\(reconnectBackoff.consecutiveFailures) reconnects=\(reconnectCount)")
                 do {
-                    try await Task.sleep(for: .seconds(min(Double(reconnectCount), 5)))
+                    try await Task.sleep(for: .seconds(retryDelay))
                 } catch { return }
             }
         }

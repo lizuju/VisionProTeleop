@@ -1,6 +1,6 @@
 # R1 Tracking Streamer：原生透视与机器人第一人称
 
-配套发布：**production-20261008**，完整变化与机器人端验证见 [xr_teleoperate 发布说明](https://github.com/lizuju/xr_teleoperate/blob/production-20261008/docs/releases/production-20261008.md)。
+配套发布：**production-20261008-runtime-reconnect**，完整变化与机器人端验证见 [xr_teleoperate 发布说明](https://github.com/lizuju/xr_teleoperate/blob/production-20261008-runtime-reconnect/docs/releases/production-20261008-runtime-reconnect.md)。
 
 本分支在 [Improbable-AI/VisionProTeleop](https://github.com/Improbable-AI/VisionProTeleop) 的 `4c549905c2a8b214d79f7cd88e535101a1ce32af` 基础上，接入 R1 头手追踪和机器人双目视频。上游 MIT 许可证保留在 [LICENSE](LICENSE)。机器人端配套代码在 [lizuju/xr_teleoperate](https://github.com/lizuju/xr_teleoperate) 和 [lizuju/teleimager](https://github.com/lizuju/teleimager)。
 
@@ -88,11 +88,15 @@ App 内第一人称地址填写 **Ubuntu 视频网关的 IP / 主机名**，不�
 
 配套原生启动脚本当前使用 500 ms 输入过期保护，第一人称视频门禁保持 500 ms；自动恢复不放宽这些阈值。gRPC/TCP已经接受的字节不能由本应用撤回，软件优化不能消除无线断流。实机只读验证仍观察到超过 500 ms 的接收间隔，不能把自动恢复理解为“无线暂停已彻底解决”。
 
+视频重连等待按连续失败次数为 1–5 秒，累计重连次数仅用于显示。连续收到源序列和源时间均递增的新鲜画面至少 2 秒后重置退避，之后偶发故障等 1 秒；重复、未来、过期或时钟无效的数据不能触发重置。既有 3 秒无帧重连检查保持不变，日志提供 `retry_delay_s`、`consecutive_failures` 和累计 `reconnects`。
+
 每条保存后，原位置状态栏显示“第 N 条 · 质检中”；完成后显示满足默认连续 40 帧门槛的可导出段数/帧数，或说明没有足够长的片段。“…”内查看任务标签、文件完整性、合格帧数、最长片段及主要筛除原因。失败、丢弃或未标记的数据不提示可用于默认成功示范训练。质检结果按保存目录关联，下一条采集不必等待。
 
 机器人端采集、质量报告与训练导出使用配套同名 tag；IMU 不作为有效训练输入。
 
 ## 验证与开发
+
+本次重连修复通过 31 项生产逻辑提取的 Swift 检查，完整 visionOS 编译及真机安装成功；配套运行版本预检与 socket 清理共 29 项 Python 检查通过。真实无线断线恢复耗时尚未测量。重连测试方法见 [tests/video_reconnect/README.md](tests/video_reconnect/README.md)。
 
 本版 App 源码已完成 visionOS 全量编译、签名安装，发布源码与已安装的质量 HUD 源码一致。27 项 Swift 质量 DTO/标签检查通过，包括缺省字段的 pending/failed 状态、多条结果关联、非成功标签以及主要筛除原因。真实 Python 保存→质检 worker→状态发布 JSON 被生产 Swift DTO 正确读取，隔离合成数据实际导出 1 段 40 帧。本版尚未重新采集真实机器人任务；前一版本的视频、追踪与恢复验证不能代替本版采集效果实测。
 
