@@ -20,11 +20,76 @@ struct RobotRecordingStatus: Decodable {
             return "第 \(id + 1) 条已保存 · \(result)"
         }
     }
+    struct Quality: Decodable {
+        let episode: String
+        let state: String
+        let outcome: String?
+        let min_segment_frames: Int?
+        let file_valid: Bool?
+        let total_frames: Int?
+        let eligible_frames: Int?
+        let exportable_frames: Int?
+        let exportable_segments: Int?
+        let longest_segment_frames: Int?
+        let excluded_counts: [String: Int]?
+        let error: String?
+
+        var outcomeLabel: String {
+            guard let outcome else { return "未确认" }
+            return ["success": "成功", "failure": "失败", "discarded": "已标记丢弃", "unspecified": "未标注"][outcome] ?? "未知标签"
+        }
+
+        var hasExportableSegments: Bool {
+            state == "complete" && file_valid == true && outcome == "success"
+                && (exportable_segments ?? 0) > 0 && (exportable_frames ?? 0) > 0
+        }
+
+        var summary: String {
+            switch state {
+            case "pending": return "质检中"
+            case "failed": return "质检失败"
+            case "complete":
+                if file_valid == false { return "文件不完整" }
+                if file_valid != true { return "文件完整性未确认" }
+                if outcome != "success" { return "\(outcomeLabel) · 不纳入训练导出" }
+                if hasExportableSegments {
+                    return "可导出 \(exportable_segments!) 段 / \(exportable_frames!) 帧"
+                }
+                return "无足够长的可导出片段"
+            default: return "质量状态未知"
+            }
+        }
+
+        var exclusionLabels: [String] {
+            let names = ["not_following": "未跟随", "tracking_stale": "追踪过期", "feedback_stale": "反馈过期",
+                         "image_stale": "图像过期", "image_missing": "图像缺失", "cameras_unaligned": "相机未对齐",
+                         "sensor_unaligned": "反馈与图像未对齐", "camera_clock_invalid": "相机时间无效",
+                         "observation_skew": "观察时间差过大", "observation_age": "观察过旧",
+                         "request_skew": "双臂与手指请求时间差过大", "command_inactive": "命令未生效",
+                         "request_before_observation": "请求早于观察", "request_stale": "请求过期",
+                         "actions_unaligned": "动作请求未对齐", "hand_input_stale": "手指输入过期",
+                         "arm_request_unmatched": "机械臂请求与发布未匹配", "hand_request_unmatched": "手指请求与发布未匹配"]
+            return (excluded_counts ?? [:]).filter { $0.value > 0 }
+                .sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
+                .prefix(3).map { "\(names[$0.key] ?? $0.key)：\($0.value) 帧" }
+        }
+    }
     let state: String
     let episode: Episode?
     let frames_accepted: Int
     let last_saved: Saved?
+    let quality: Quality?
     let error: String?
+
+    var savedQuality: Quality? {
+        guard let quality, quality.episode == last_saved?.name else { return nil }
+        return quality
+    }
+
+    var qualityLabel: String? {
+        guard let quality = savedQuality, let saved = last_saved else { return nil }
+        return "第 \(saved.id + 1) 条 · \(quality.summary)"
+    }
 
     var label: String {
         let number = episode.map { "第 \($0.id + 1) 条 · " } ?? ""

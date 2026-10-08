@@ -365,6 +365,11 @@ struct RobotFirstPersonView: View {
             if let notice = operatorStatus.savedNotice {
                 Text(notice).font(.caption).foregroundStyle(.green)
             }
+            if let recording = operatorStatus.snapshot?.recording, let quality = recording.savedQuality,
+               let label = recording.qualityLabel {
+                Text(label).font(.caption)
+                    .foregroundStyle(quality.state == "pending" ? Color.secondary : quality.hasExportableSegments ? Color.green : Color.orange)
+            }
             if showSettings {
                 Divider()
                 Text(hands).font(.callout)
@@ -407,6 +412,34 @@ struct RobotFirstPersonView: View {
                 if let recording = operatorStatus.snapshot?.recording {
                     if let saved = recording.last_saved {
                         Text(saved.label).font(.caption)
+                    }
+                    if let quality = recording.savedQuality {
+                        Text("任务结果：\(quality.outcomeLabel)").font(.caption)
+                        if quality.state == "complete" {
+                            Text("数据文件：\(quality.file_valid == true ? "完整" : quality.file_valid == false ? "不完整" : "未确认")")
+                                .foregroundStyle(quality.file_valid == true ? Color.secondary : Color.orange)
+                            if let total = quality.total_frames, let eligible = quality.eligible_frames {
+                                Text("单帧合格 \(eligible) / \(total) · 最长连续 \(quality.longest_segment_frames ?? 0) 帧")
+                                    .monospacedDigit()
+                            }
+                            if let minimum = quality.min_segment_frames {
+                                Text("导出至少连续 \(minimum) 帧 · \(quality.summary)")
+                                    .font(.caption2)
+                            } else {
+                                Text("导出最小片段长度未确认 · \(quality.summary)").font(.caption2)
+                            }
+                            ForEach(quality.exclusionLabels, id: \.self) { label in
+                                Text(label).font(.caption2).foregroundStyle(.secondary)
+                            }
+                            if !quality.exclusionLabels.isEmpty {
+                                Text("同一帧可有多个筛除原因").font(.caption2).foregroundStyle(.secondary)
+                            }
+                        } else if quality.state == "pending" {
+                            Text("正在核对文件与连续片段").font(.caption2).foregroundStyle(.secondary)
+                        } else if quality.state == "failed" {
+                            Text(quality.error ?? "质量检查失败，请查看电脑终端")
+                                .font(.caption2).foregroundStyle(.orange)
+                        }
                     }
                     if recording.state == "failed" {
                         Text("采集保存失败，请查看电脑终端").foregroundStyle(.orange)
