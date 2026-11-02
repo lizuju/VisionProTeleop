@@ -290,7 +290,8 @@ final class RobotVideoConnection: ObservableObject {
         var components = URLComponents()
         components.scheme = "https"
         components.host = host
-        components.port = 60001
+        // The raw head cameras, from r1-head-hd on PC2. Must match head-optics.json.
+        components.port = 60004
         components.path = "/offer"
         guard let url = components.url else { throw RobotVideoError.message("视频主机地址无效") }
         let sessionConfig = URLSessionConfiguration.ephemeral

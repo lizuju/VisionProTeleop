@@ -6,6 +6,7 @@ struct R1OpticsParameters {
     float4 intrinsics;
     float4 distortion;
     float4 imageAndFocal;
+    float4 renderSize;
 };
 
 vertex float4 r1OpticsVertex(uint index [[vertex_id]]) {
@@ -20,7 +21,7 @@ fragment float4 r1OpticsFragment(float4 position [[position]],
     float height = p.imageAndFocal.y;
     float focal = p.imageAndFocal.z;
     float2 pixel = position.xy - 0.5f;
-    float2 principal = (float2(width, height) - 1.0f) * 0.5f;
+    float2 principal = (p.renderSize.xy - 1.0f) * 0.5f;
     float3 ray = (p.inverseRectification * float4((pixel - principal) / focal, 1, 0)).xyz;
     if (ray.z <= 0) return float4(0, 0, 0, 1);
     float2 normalized = ray.xy / ray.z;

@@ -189,9 +189,8 @@ final class RobotStereoDisplay: ObservableObject {
             return
         }
         do {
-            let eyeWidth = frame.width / 2
-            if dimensions != SIMD2(eyeWidth, frame.height) {
-                try configure(width: eyeWidth, height: frame.height)
+            if dimensions != SIMD2(optics.renderWidth, optics.renderHeight) {
+                try configure(width: optics.renderWidth, height: optics.renderHeight)
             }
             guard textures.count == 2, let command = queue.makeCommandBuffer() else { return }
             try optics.encode(pixelBuffer: frame.pixelBuffer,
