@@ -26,6 +26,7 @@ final class RobotVideoOptics {
         var intrinsics: SIMD4<Float>
         var distortion: SIMD4<Float>
         var imageAndFocal: SIMD4<Float>
+        var renderSize: SIMD4<Float>
     }
 
     enum OpticsError: LocalizedError {
@@ -44,6 +45,9 @@ final class RobotVideoOptics {
 
     let eyeWidth: Int
     let eyeHeight: Int
+    // The stream is 0.75 of the raw camera. Rendering at raw size keeps its centre detail at the 120° view.
+    let renderWidth: Int
+    let renderHeight: Int
     let calibrationSource: String
     let baselineM: Float
     private let staging: any MTLTexture
@@ -66,6 +70,8 @@ final class RobotVideoOptics {
               }) else { throw OpticsError.invalidCalibration }
         eyeWidth = profile.image_size[0]
         eyeHeight = profile.image_size[1]
+        renderWidth = eyeWidth * 4 / 3
+        renderHeight = eyeHeight * 4 / 3
         calibrationSource = profile.source_calibration_sha256
         baselineM = profile.baseline_m
         eyeParameters = eyes.map { eye in
@@ -81,7 +87,8 @@ final class RobotVideoOptics {
             return Parameters(inverseRectification: inverse,
                               intrinsics: SIMD4(k[0][0], k[1][1], k[0][2], k[1][2]),
                               distortion: SIMD4(d[0], d[1], d[2], d[3]),
-                              imageAndFocal: .zero)
+                              imageAndFocal: .zero,
+                              renderSize: .zero)
         }
         let texture = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm_srgb,
             width: eyeWidth * 2, height: eyeHeight, mipmapped: false)
@@ -110,10 +117,11 @@ final class RobotVideoOptics {
         let image = CIImage(cvPixelBuffer: pixelBuffer).transformed(by:
             CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: CGFloat(eyeHeight)))
         context.render(image, to: staging, commandBuffer: commandBuffer, bounds: bounds, colorSpace: colorSpace)
-        let focal = Float(eyeWidth) / (2 * tan(fov * .pi / 360))
+        let focal = Float(renderWidth) / (2 * tan(fov * .pi / 360))
         for eye in 0..<2 {
             var parameters = eyeParameters[eye]
             parameters.imageAndFocal = SIMD4(Float(eyeWidth), Float(eyeHeight), focal, Float(eye))
+            parameters.renderSize = SIMD4(Float(renderWidth), Float(renderHeight), 0, 0)
             let pass = MTLRenderPassDescriptor()
             pass.colorAttachments[0].texture = targets[eye]
             pass.colorAttachments[0].loadAction = .dontCare
