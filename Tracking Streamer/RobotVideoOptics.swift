@@ -45,7 +45,7 @@ final class RobotVideoOptics {
 
     let eyeWidth: Int
     let eyeHeight: Int
-    // The stream is 0.75 of the raw camera. Rendering at raw size keeps its centre detail at the 120° view.
+    // The stream is the raw camera size. Rendering at that size keeps its centre detail at the 120° view.
     let renderWidth: Int
     let renderHeight: Int
     let calibrationSource: String
@@ -70,8 +70,8 @@ final class RobotVideoOptics {
               }) else { throw OpticsError.invalidCalibration }
         eyeWidth = profile.image_size[0]
         eyeHeight = profile.image_size[1]
-        renderWidth = eyeWidth * 4 / 3
-        renderHeight = eyeHeight * 4 / 3
+        renderWidth = eyeWidth
+        renderHeight = eyeHeight
         calibrationSource = profile.source_calibration_sha256
         baselineM = profile.baseline_m
         eyeParameters = eyes.map { eye in

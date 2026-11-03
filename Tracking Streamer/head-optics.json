@@ -1,8 +1,8 @@
 {
   "schema": "r1_head_optics_v1",
   "image_size": [
-    960,
-    816
+    1280,
+    1088
   ],
   "source_calibration_sha256": "0f07487a9c50d03875b871d36bace400df2dc6fca78c3e92a9e061f293f090c4",
   "source_calibration_path": "http://192.168.123.161:9080/cam_param.txt",
@@ -11,18 +11,18 @@
   "baseline_m": 0.0602832,
   "pixel_convention": "OpenCV integer coordinates are pixel centres; normalized texture UV=(pixel+0.5)/size",
   "rectification_rotation_convention": "raw optical ray to rectified optical ray; inverse sampling uses transpose",
-  "source_image_geometry": "1920x816 SBS from raw 1280x1088 RTP JPEG 5004/5005 scaled by 0.75; left then right; fisheye coefficients fitted to the factory rational model",
+  "source_image_geometry": "2560x1088 SBS from raw 1280x1088 RTP JPEG 5004/5005 at full size; left then right; fisheye coefficients fitted to the factory rational model",
   "left": {
     "camera_matrix": [
       [
-        369.32025,
+        492.42699999999996,
         0.0,
-        480.71500000000003
+        641.12
       ],
       [
         0.0,
-        369.86025,
-        405.187
+        493.147,
+        540.416
       ],
       [
         0.0,
@@ -57,14 +57,14 @@
   "right": {
     "camera_matrix": [
       [
-        370.85175,
+        494.46899999999994,
         0.0,
-        483.091
+        644.288
       ],
       [
         0.0,
-        371.25300000000004,
-        396.61300000000006
+        495.004,
+        528.984
       ],
       [
         0.0,
